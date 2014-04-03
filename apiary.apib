@@ -29,36 +29,36 @@ XRP amounts are formatted in the same way, with issuer set to an empty string:
 
 # Group Payments
 
-The Payment format used by `ripple-rest` includes the following fields:
+## Payment Format
 
-__Minimum Required Fields__
+### Minimum Required Fields
 
 - `source_account` - The Ripple Address of the sender's account
 - `destination_account` - The Ripple Address of the receiver's account
-- `destination_amount` - The [Amount](#Amounts) that will be delivered to the `destination_account`
+- `destination_amount` - The [Amount](#Amounts) that will be delivered to the destination_account
 
-__Optional Fields__
+### Optional Fields
 
 - `source_tag` - An optional string representation of a 32-bit integer that is used to identify the sender's hosted account at a gateway
 - `destination_tag` - An optional string representation of a 32-bit integer that is used to identify the receiver's hosted account at a gateway
-- `source_amount` - An optional [Amount](#Amounts) that should be specified for cross-currency payments or payments to and from the same currency but issued by different gateways. The `source_account` will be charged a maximum of the `source_amount`'s value + the `source_slippage`
-- `source_slippage` - An optional string representation of a floating point number used as a buffer added to the `source_amount`'s value
-- `invoice_id` - An optional 256-bit hash that can be used to identify a particular payment, particularly in the case of payments using the [Bridge Protocol](https://ripple.com/wiki/Services_API#Outbound_bridges). Note that this is distinct from the `client_resource_id`
+- `source_amount` - An optional [Amount](#Amounts) that should be specified for cross-currency payments or payments to and from the same currency but issued by different gateways. The source_account will be charged a maximum of the source_amount's value + the source_slippage
+- `source_slippage` - An optional string representation of a floating point number used as a buffer added to the source_amount's value
+- `invoice_id` - An optional 256-bit hash that can be used to identify a particular payment, particularly in the case of payments using the [Bridge Protocol](https://ripple.com/wiki/Services_API#Outbound_bridges). Note that this is distinct from the client_resource_id
 - `paths` - A field that should be treated as opaque, used internally to specify payment "paths" through the network. This will be set automatically by the pathfinding endpoint but advanced users can set this to a JSON array representing the [PathSet](https://ripple.com/wiki/Payment_paths)
 - `partial_payment` - An optional boolean that indicates whether the payment should be executed even if the whole amount cannot be delivered because of a lack of liquidity or funds in the source_account account. Defaults to false
 - `no_direct_ripple` - An optional boolean that can be set to true if paths are specified and the sender would like the Ripple Network to disregard any direct paths from the source_account to the destination_account. This may be used to take advantage of an arbitrage opportunity or by gateways wishing to issue balances from a hot wallet to a user who has mistakenly set a trustline directly to the hot wallet. Defaults to false
 
-__Fields Generated After Submission__
+### Fields Generated After Submission
 
-- `state` - The current state of the payment. Possible values are `pending`, `validated`, or `failed`
-- `result` - The `rippled` result code. `tesSUCCESS` indicates the payment was accepted and applied by the `rippled`, anything else indicates a failure. Error categories are documented [here](https://ripple.com/wiki/Transaction_errors)
+- `state` - The current state of the payment. Possible values are "pending", "validated", or "failed"
+- `result` - The rippled result code. "tesSUCCESS" indicates the payment was accepted and applied by the rippled, anything else indicates a failure. Error categories are documented [here](https://ripple.com/wiki/Transaction_errors)
 - `ledger` - The ledger sequence number containing the payment record. If the payment failed off-network this indicates the ledger at which time the payment failed
 - `hash` - The 256-bit hash of the payment's serialized binary format. This is used throughout the Ripple protocol as the unique identifier for the transaction
 - `timestamp` - The timestamp representing when the payment was validated and written into the Ripple ledger
-- `fee` - The Ripple Network transaction fee, represented in whole XRP (NOT \"drops\", or millionths of an XRP, which is used elsewhere in the Ripple protocol)
-- `direction` - The direction of the payment, from the perspective of the account being queried. Possible values are `incoming`, `outgoing`, and `passthrough`
-- `source_balance_changes` - Parsed from the validated transaction metadata, this array of [Amounts](#Amounts) represents all of the changes to balances held by the `source_account`. Most often this will have one amount representing the Ripple Network fee and, if the `source_amount` was not XRP, one amount representing the actual `source_amount` that was sent
-- `destination_balance_changes` - Parsed from the validated transaction metadata, this array of [Amounts](#Amounts) represents the changes to balances held by the `destination_account`. For those receiving payments this is important to check because if the `partial_payment` flag is set this value may be less than the `destination_amount`
+- `fee` - The Ripple Network transaction fee, represented in whole XRP (NOT "drops", or millionths of an XRP, which is used elsewhere in Ripple)
+- `direction` - The direction of the payment, from the perspective of the account being queried. Possible values are "incoming", "outgoing", and "passthrough"
+- `source_balance_changes` - Parsed from the validated transaction metadata, this array of [Amounts](#Amounts) represents all of the changes to balances held by the source_account. Most often this will have one amount representing the Ripple Network fee and, if the source_amount was not XRP, one amount representing the actual source_amount that was sent
+- `destination_balance_changes` - Parsed from the validated transaction metadata, this array of [Amounts](#Amounts) represents the changes to balances held by the destination_account. For those receiving payments this is important to check because if the partial_payment flag is set this value may be less than the destination_amount
 
 ### POST /v1/payments
 
@@ -203,4 +203,200 @@ If no payments match the specified parameters the `payments` array will be empty
 
 # Group Trustlines
 
+# Group Orders
 
+This section includes endpoints to submit, retrieve, and delete an account's oustanding orders, as well as to retrieve the bids and asks from a particular orderbook.
+
+## Base and Counter Currencies
+
+Although `rippled` does not use the concepts of base and counter currencies, `ripple-rest` uses a configurable prioritization and exception list to determine the base and counter currency for an order retrieved from Ripple. 
+
+### Default Currency Prioritization
+
+1. XRP,
+2. EUR,
+3. GBP,
+4. AUD,
+5. NZD,
+6. USD,
+7. CAD,
+8. CHF,
+9. MXN,
+10. SGD, 
+11. NOK, 
+12. JPY,
+13. CNY
+
+### Default Currency Cross Exceptions
+
+1. ZAR/JPY
+
+## Order Format
+
+### Minimum Required Fields
+
++ `account` - Ripple Address of the order's creator
++ `is_bid` - Order is a bid if true, or an ask otherwise
++ `base_amount` - If the order is a bid, the [Amount](#Amounts) representing what the order's creator wishes to buy. If the order is an ask, the [Amount](#Amounts) representing what the order's creator wishes to sell. If an order is partially or fully consumed this value will decrease. *See Note below
++ `counter_amount` - If the order is a bid, the [Amount](#Amounts) representing what the order's creator wishes to sell. If the order is an ask, the [Amount](#Amounts) representing what the order's creator wishes to buy. If an order is partially or fully consumed this value will decrease. *See Note below
++ `exchange_rate` - The quantity of the *counter* currency needed to buy 1 unit of the base currency. This value is fixed when the order is created and will never change, even if the order is partially or fully consumed and rounding error causes this value to not exactly equal the counter_amount divided by the base_amount. *See Note below
+
+----------
+__Note about Amounts and Exchange Rate:__
+
+`rippled` uses the concepts of "TakerPays" and "TakerGets" to define the terms of an order. `ripple-rest` uses the currency prioritization and exceptions list to translate "base" and "counter" amounts into the format used by `rippled`.
+
+When submitting orders to `ripple-rest`, two of the following must be supplied but the third is optional: base_amount's value, counter_amount's value, and exchange_rate. For example, both of the following would be valid:
+
+```
+{
+  /* ... */
+  "base_amount": {
+    "value": "10",
+    "currency": "XRP",
+    "issuer": ""
+  },
+  "counter_amount": {
+    "value": "1",
+    "currency": "USD",
+    "issuer": "r..."
+  }
+  /* ... */
+}
+```
+or
+
+```
+{
+  /* ... */
+  "base_amount": {
+    "value": "10",
+    "currency": "XRP",
+    "issuer": ""
+  },
+  "counter_amount": {
+    "currency": "USD",
+    "issuer": "r..."
+  },
+  "exchange_rate": "0.1"
+  /* ... */
+}
+```
+
+If the value of either the base_amount or counter_amount is omitted, a bignumber library will be used to infer the value omitted from the exchange rate and the value that is supplied. `rippled` does not allow submissions to set their own exchange rate so ultimately the order will be submitted with the complete base and counter amounts.
+
+
+----------
+
+### Optional Fields
+
++ `expiration_timestamp`
++ `ledger_timeout`
++ `immediate_or_cancel`
++ `fill_or_kill`
++ `maximize_buy_or_sell`
++ `cancel_replace`
+
+### Fields Generated After Submission
+
++ `state`
++ `ledger`
++ `hash`
++ `previous`
+
+### POST /v1/orders
+
+Submit a new order.
+
++ Request
+
++ Response 200
+
+### GET /v1/accounts/{account}/orders/{sequence}
+
+Retrieve the details of a particular outstanding order.
+
++ Parameters
+
+  + account (required, Ripple Address) ... The owner account
+  + sequence (required, integer) ... The sequence number of the order to retrieve. All orders can be uniquely identified by the account that placed them and their sequence number
+
++ Response 200
+
+### DELETE /v1/accounts/{account}/orders/{sequence}
+
+Delete an outstanding order.
+
++ Parameters
+
+  + account (required, Ripple Address) ... The owner account
+  + sequence (required, integer) ... The sequence number of the order to delete. All orders can be uniquely identified by the account that placed them and their sequence number
+
++ Request
+
+  + Body
+
+  ```
+  {
+    "secret": "s..."
+  }
+  ```
+
++ Response 200
+
+### GET /v1/accounts/{account}/orders?bid_currency,ask_currency
+
+Retrieve details of the specified account's outstanding orders.
+
++ Parameters
+
+  + base_currency (optional, 3-character standard currency code or 20-byte hex representation + optional issuer, `XRP`) ... Limit results to orders with the specified base currency
+  + counter_currency (optional, 3-character standard currency code or 20-byte hex representation + optional issuer, `USD+r...`) ... Limit results to orders with the specified counter currency
+
++ Response 200
+
+### GET /v1/orders/{base_currency}/{counter_currency}/bids{?cutoff_price}
+
+Retrieve the outstanding bid orders from the order book identified by the given base and counter currencies.
+
++ Parameters
+
+  + base_currency (required, 3-character standard currency code or 20-byte hex representation + required issuer unless currency is XRP, `XRP`) ... Retrieve current orderbook where this is the base currency
+  + counter_currency (required, 3-character standard currency code or 20-byte hex representation + required issuer unless currency is XRP, `USD+r...`) ... Retrieve current orderbook where this is the counter currency
+  + cutoff_price (optional, floating point number, `0.00775`) ... If specified, limit results to orders with prices greater than this value
+
++ Response 200
+
+  ```
+  {
+    "success": true,
+    "orders": [{
+      /* ... Order ... */
+    }, {
+      /* ... Order ... */
+    }]
+  }
+  ```
+
+### GET /v1/orders/{base_currency}/{counter_currency}/asks{?cutoff_price}
+
+Retrieve the outstanding ask orders from the order book identified by the given base and counter currencies.
+
++ Parameters
+
+  + base_currency (required, 3-character standard currency code or 20-byte hex representation + required issuer unless currency is XRP, `XRP`) ... Retrieve current orderbook where this is the base currency
+  + counter_currency (required, 3-character standard currency code or 20-byte hex representation + required issuer unless currency is XRP, `USD+r...`) ... Retrieve current orderbook where this is the counter currency
+  + cutoff_price (optional, floating point number, `0.00775`) ... If specified, limit results to orders with prices less than this value
+
++ Response 200
+
+  ```
+  {
+    "success": true,
+    "orders": [{
+      /* ... Order ... */
+    }, {
+      /* ... Order ... */
+    }]
+  }
+  ```
