@@ -156,28 +156,46 @@ Retrieve the details of a particular payment from `rippled` or, in the case of o
 
 + Parameters
 
-    + hash (optional, string, `389720F6FD8A144F171708F9ECB334D704CBCFEFBCDA152D931AC34FB5F9E32B`) ... The hash of a particular payment transaction. Note that transaction hashes are used throughout Ripple as unique identifiers for transactions.
-    + client_resource_id (optional, string, `d9aa7bf0-f42a-4c73-b5e7-3018f6a42792`) ... The client-supplied unique identifier of a payment submitted through `ripple-rest`. Note that these are only stored in `ripple-rest`'s, not in the transaction details on Ripple.
+    + hash (optional, 256-bit string written in hex, `389720F6FD8A144F171708F9ECB334D704CBCFEFBCDA152D931AC34FB5F9E32B`) ... The hash of a particular payment transaction. Note that transaction hashes are used throughout Ripple as unique identifiers for transactions.
+    + client_resource_id (optional, string of ASCII-printable characters, `d9aa7bf0-f42a-4c73-b5e7-3018f6a42792`) ... The client-supplied unique identifier of a payment submitted through `ripple-rest`. Note that these are only stored in `ripple-rest`'s, not in the transaction details on Ripple.
     
 + Response 200
 
 ### GET /v1/accounts/{address}/payments{?start_ledger,end_ledger,exclude_failed,source_account,destination_account,earliest_first,results_per_page,page}
 
-Retrieve the details of multiple payments from `rippled` and `ripple-rest`.
+Retrieve the details of multiple payments from `rippled` and `ripple-rest`. The response will contain an array of objects that each have a `client_resource_id` field and a `payment` field.
+
+If no payments match the specified parameters the `payments` array will be empty.
 
 + Parameters
 
     + start_ledger = `(earliest ledger in connected rippled)` (optional, integer, `32570`) ... If `earliest_first` is set to true this will be the index number of the earliest ledger queried, or the most recent one if `earliest_first` is set to false. 
     + end_ledger = `(latest ledger in connected rippled)` (optional, integer, `5000000`) ... If `earliest_first` is set to true this will be the index number of the most recent ledger queried, or the earliest one if `earliest_first` is set to false.
-    + exclude_failed = `false` (optional, boolean) ... If set to true, limit the results to payments that were successfully validated and written into the Ripple Ledger
+    + exclude_failed = `false` (optional, boolean, `false`) ... If set to true, limit the results to payments that were successfully validated and written into the Ripple Ledger
     + source_account (optional, Ripple Address, `rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz`) ... If specified, limit the results to payments initiated by a particular account
     + destination_account (optional, Ripple Address, `rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r`) ... If specified, limit the results to payments made to a particular account
-    + earliest_first = `true` (optional, boolean) ... Determines whether results should be displayed in ascending or descending order, with respect to the ledger/time at which they were validated
-    + results_per_page = `10` (optional, integer) ... Number of results to display per page
-    + page = `1` (optional, integer) ... Page number. Note that if fewer results than the `results_per_page` are returned, there are no pages
+    + earliest_first = `true` (optional, boolean, `true`) ... Determines whether results should be displayed in ascending or descending order, with respect to the ledger/time at which they were validated
+    + results_per_page = `10` (optional, integer, `10`) ... Number of results to display per page
+    + page = `1` (optional, integer, `1`) ... Page number. Note that if fewer results than the `results_per_page` are returned, there are no pages
 
-+ Response 200
++ Response 200 (application/json)
 
+  ```
+  {
+    "success": true,
+    "payments": [{
+      "client_resource_id": "",
+      "payment": {
+        /* ... Payment ... */
+      }
+    }, {
+      "client_resource_id": "",
+      "payment": {
+        /* ... Payment ... */
+      }
+    }]
+  }
+  ```
 
 # Group Account Settings
 
