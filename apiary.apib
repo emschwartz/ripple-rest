@@ -4,18 +4,20 @@ HOST: http://www.google.com
 # ripple-rest
 A RESTful API for interacting with the Ripple Network.
 
-# Group Amounts
 
 Note that all amounts in `ripple-rest` are denoted as objects with the following format:
-```js
+
+```
 {
   "value": "1.0", // Value is represented as a string to retain precision
   "currency": "USD",
   "issuer": "r..."
 }
 ```
+
 XRP amounts are formatted in the same way, with issuer set to an empty string:
-```js
+
+```
 {
   "value": "1.0",
   "currency": "XRP",
