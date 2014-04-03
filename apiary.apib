@@ -2,15 +2,34 @@ FORMAT: 1A
 HOST: http://www.google.com
 
 # ripple-rest
-A RESTful API for interacting with the Ripple Network
+A RESTful API for interacting with the Ripple Network.
+
+# Group Amounts
+
+Note that all amounts in `ripple-rest` are denoted as objects with the following format:
+```js
+{
+  "value": "1.0", // Value is represented as a string to retain precision
+  "currency": "USD",
+  "issuer": "r..."
+}
+```
+XRP amounts are formatted in the same way, with issuer set to an empty string:
+```js
+{
+  "value": "1.0",
+  "currency": "XRP",
+  "issuer": ""
+}
+```
 
 # Group Payments
 
 __Minimum Required Fields__
 
-- `source_account`
-- `destination_account`
-- `destination_amount`
+- `source_account` - The Ripple Address of the sender's account
+- `destination_account` - The Ripple Address of the receiver's account
+- `destination_amount` - The 
 
 __Optional Fields__
 
@@ -35,7 +54,7 @@ __Fields Generated After Submission__
 - `source_balance_changes`
 - `destination_balance_changes`
 
-### POST /v1/payments/
+### POST /v1/payments
 
 Submit a payment.
 
