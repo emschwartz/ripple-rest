@@ -35,30 +35,30 @@ __Minimum Required Fields__
 
 - `source_account` - The Ripple Address of the sender's account
 - `destination_account` - The Ripple Address of the receiver's account
-- `destination_amount` - The [Amount](#Amounts)
+- `destination_amount` - The [Amount](#Amounts) that will be delivered to the `destination_account`
 
 __Optional Fields__
 
-- `source_tag`
-- `destination_tag`
-- `source_amount`
-- `source_slippage`
-- `invoice_id`
-- `paths`
-- `partial_payment`
-- `no_direct_ripple`
+- `source_tag` - An optional string representation of a 32-bit integer that is used to identify the sender's hosted account at a gateway
+- `destination_tag` - An optional string representation of a 32-bit integer that is used to identify the receiver's hosted account at a gateway
+- `source_amount` - An optional [Amount](#Amounts) that should be specified for cross-currency payments or payments to and from the same currency but issued by different gateways. The `source_account` will be charged a maximum of the `source_amount`'s value + the `source_slippage`
+- `source_slippage` - An optional string representation of a floating point number used as a buffer added to the `source_amount`'s value
+- `invoice_id` - An optional 256-bit hash that can be used to identify a particular payment, particularly in the case of payments using the [Bridge Protocol](https://ripple.com/wiki/Services_API#Outbound_bridges). Note that this is distinct from the `client_resource_id`
+- `paths` - A field that should be treated as opaque, used internally to specify payment "paths" through the network. This will be set automatically by the pathfinding endpoint but advanced users can set this to a JSON array representing the [PathSet](https://ripple.com/wiki/Payment_paths)
+- `partial_payment` - An optional boolean that indicates whether the payment should be executed even if the whole amount cannot be delivered because of a lack of liquidity or funds in the source_account account. Defaults to false
+- `no_direct_ripple` - An optional boolean that can be set to true if paths are specified and the sender would like the Ripple Network to disregard any direct paths from the source_account to the destination_account. This may be used to take advantage of an arbitrage opportunity or by gateways wishing to issue balances from a hot wallet to a user who has mistakenly set a trustline directly to the hot wallet. Defaults to false
 
 __Fields Generated After Submission__
 
-- `direction`
-- `state`
-- `result`
-- `ledger`
-- `hash`
-- `timestamp`
-- `fee`
-- `source_balance_changes`
-- `destination_balance_changes`
+- `state` - The current state of the payment. Possible values are `pending`, `validated`, or `failed`
+- `result` - The `rippled` result code. `tesSUCCESS` indicates the payment was accepted and applied by the `rippled`, anything else indicates a failure. Error categories are documented [here](https://ripple.com/wiki/Transaction_errors)
+- `ledger` - The ledger sequence number containing the payment record. If the payment failed off-network this indicates the ledger at which time the payment failed
+- `hash` - The 256-bit hash of the payment's serialized binary format. This is used throughout the Ripple protocol as the unique identifier for the transaction
+- `timestamp` - The timestamp representing when the payment was validated and written into the Ripple ledger
+- `fee` - The Ripple Network transaction fee, represented in whole XRP (NOT \"drops\", or millionths of an XRP, which is used elsewhere in the Ripple protocol)
+- `direction` - The direction of the payment, from the perspective of the account being queried. Possible values are `incoming`, `outgoing`, and `passthrough`
+- `source_balance_changes` - Parsed from the validated transaction metadata, this array of [Amounts](#Amounts) represents all of the changes to balances held by the `source_account`. Most often this will have one amount representing the Ripple Network fee and, if the `source_amount` was not XRP, one amount representing the actual `source_amount` that was sent
+- `destination_balance_changes` - Parsed from the validated transaction metadata, this array of [Amounts](#Amounts) represents the changes to balances held by the `destination_account`. For those receiving payments this is important to check because if the `partial_payment` flag is set this value may be less than the `destination_amount`
 
 ### POST /v1/payments
 
