@@ -213,21 +213,23 @@ Although `rippled` does not use the concepts of base and counter currencies, `ri
 
 ### Default Currency Prioritization
 
-1. XRP,
-2. EUR,
-3. GBP,
-4. AUD,
-5. NZD,
-6. USD,
-7. CAD,
-8. CHF,
-9. MXN,
-10. SGD, 
-11. NOK, 
-12. JPY,
+1. XRP
+2. EUR
+3. GBP
+4. AUD
+5. NZD
+6. USD
+7. CAD
+8. CHF
+9. MXN
+10. SGD 
+11. NOK 
+12. JPY
 13. CNY
 
 ### Default Currency Cross Exceptions
+
+*Note that exceptions are written as <base>/<counter>
 
 1. ZAR/JPY
 
@@ -290,19 +292,20 @@ If the value of either the base_amount or counter_amount is omitted, a bignumber
 
 ### Optional Fields
 
-+ `expiration_timestamp`
-+ `ledger_timeout`
-+ `immediate_or_cancel`
-+ `fill_or_kill`
-+ `maximize_buy_or_sell`
-+ `cancel_replace`
++ `expiration_timestamp` - The timestamp after which the order will no longer be considered active
++ `ledger_timeout` - The number of ledgers after the order is initially submitted to `ripple-rest` after which it will no longer be considered active
++ `immediate_or_cancel` - Boolean that if set to true indicates this order should only take orders that are available at the time of execution and will not create an entry in the Ripple Ledger
++ `fill_or_kill` - Boolean that if set to true this order will only take orders that fill the base_amount and are available at the time of execution and will not create an entry in the Ripple Ledger
++ `maximize_buy_or_sell` - Boolean that if set to true and the order is a bid indicates that the creator wishes to buy up to the base_amount even if the counter_amount is exceeded. If it is true and the order is an ask it indicates the creator wishes to sell up to the counter_amount even if the base_amount is exceeded
++ `cancel_replace` - The sequence number of an outstanding order that should be cancelled and replaced by this one
 
 ### Fields Generated After Submission
 
-+ `state`
-+ `ledger`
-+ `hash`
-+ `previous`
++ `sequence` - The sequence number of the order on the creator's account. All orders can be uniquely identified by the address of the creator and their sequence number
++ `state` - Possible values are "active", "partially_filled", "filled", "cancelled", "expired", "failed"
++ `ledger` - If the order is returned from a historical query, the last ledger sequence when the order was modified
++ `hash` - If the order is returned from a historical query, the hash of the last transaction that modified the order
++ `previous` - If the order is returned from a historical query, the URI to retrieve the previous state of the order
 
 ### POST /v1/orders
 
