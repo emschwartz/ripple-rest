@@ -1,0 +1,155 @@
+FORMAT: 1A
+HOST: http://www.google.com
+
+# ripple-rest
+A RESTful API for interacting with the Ripple Network
+
+# Group Payments
+
+__Minimum Required Fields__
+
+- `source_account`
+- `destination_account`
+- `destination_amount`
+
+__Optional Fields__
+
+- `source_tag`
+- `destination_tag`
+- `source_amount`
+- `source_slippage`
+- `invoice_id`
+- `paths`
+- `partial_payment`
+- `no_direct_ripple`
+
+__Fields Generated After Submission__
+
+- `direction`
+- `state`
+- `result`
+- `ledger`
+- `hash`
+- `timestamp`
+- `fee`
+- `source_balance_changes`
+- `destination_balance_changes`
+
+### POST /v1/payments/
+
+Submit a payment.
+
++ Request
+
+    + Body
+    
+    ```
+    {
+        "secret": "s...",
+        "client_resource_id": "cd26cd93-6363-45e1-8270-1df6bf12461e",
+        "payment": {
+            "source_account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+            "destination_account": "rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r",
+            "destination_amount": {
+                "value": ".000010",
+                "currency": "XRP",
+                "issuer": ""
+            }
+        }
+    }
+    ```
+    
+    + Schema
+    
+    ```
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "title": "Payment",
+      "description": "A flattened Payment object used by the ripple-rest API",
+      "type": "object",
+      "properties": {
+        "source_account": {
+          "description": "The Ripple account address of the Payment sender",
+          "$ref": "RippleAddress"
+        },
+        "source_tag": {
+          "description": "A string representing an unsigned 32-bit integer most commonly used to refer to a sender's hosted account at a Ripple gateway",
+          "$ref": "UINT32"
+        },
+        "source_amount": {
+          "description": "An optional amount that can be specified to constrain cross-currency payments",
+          "$ref": "Amount"
+        },
+        "source_slippage": {
+          "description": "An optional cushion for the source_amount to increase the likelihood that the payment will succeed. The source_account will never be charged more than source_amount.value + source_slippage",
+          "$ref": "FloatString"
+        },
+        "destination_account": {
+          "$ref": "RippleAddress"
+        },
+        "destination_tag": {
+          "description": "A string representing an unsigned 32-bit integer most commonly used to refer to a receiver's hosted account at a Ripple gateway",
+          "$ref": "UINT32"
+        },
+        "destination_amount ": {
+          "description": "The amount the destination_account will receive",
+          "$ref": "Amount"
+        },
+        "invoice_id": {
+          "description": "A 256-bit hash that can be used to identify a particular payment",
+          "$ref": "Hash256"
+        },
+        "paths ": {
+          "description": "A \"stringified\" version of the Ripple PathSet structure that users should treat as opaque",
+          "type": "string"
+        },
+        "partial_payment": {
+          "description": "A boolean that, if set to true, indicates that this payment should go through even if the whole amount cannot be delivered because of a lack of liquidity or funds in the source_account account",
+          "type": "boolean"
+        },
+        "no_direct_ripple": {
+          "description": "A boolean that can be set to true if paths are specified and the sender would like the Ripple Network to disregard any direct paths from the source_account to the destination_account. This may be used to take advantage of an arbitrage opportunity or by gateways wishing to issue balances from a hot wallet to a user who has mistakenly set a trustline directly to the hot wallet",
+          "type": "boolean"
+        }
+      },
+      "required": ["source_account", "destination_account", "destination_amount"]
+    }
+    ```
+
++ Response 200 (application/json)
+
+    ```
+    {
+        "success": true,
+        "status_url": ".../v1/accounts/rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz/payments/cd26cd93-6363-45e1-8270-1df6bf12461e"
+    }
+    ```
+
+### GET /v1/accounts/{address}/payments/{hash,client_resource_id}
+
+Retrieve the details of a particular payment from `rippled` or, in the case of one submitted to `ripple-rest` that failed locally, the local database of `ripple-rest`. 
+
++ Parameters
+
+    + hash (optional, string, `389720F6FD8A144F171708F9ECB334D704CBCFEFBCDA152D931AC34FB5F9E32B`) ... The hash of a particular payment transaction. Note that transaction hashes are used throughout Ripple as unique identifiers for transactions.
+    + client_resource_id (optional, string, `d9aa7bf0-f42a-4c73-b5e7-3018f6a42792`) ... The client-supplied unique identifier of a payment submitted through `ripple-rest`. Note that these are only stored in `ripple-rest`'s, not in the transaction details on Ripple.
+    
++ Response 200
+
+### GET /v1/accounts/{address}/payments{?start_ledger,end_ledger,exclude_failed,source_account,destination_account,earliest_first,results_per_page,page}
+
+Retrieve the details of multiple payments from `rippled` and `ripple-rest`.
+
++ Parameters
+
+    + start_ledger = `(earliest ledger in rippled)` (optional, integer, `32570`) ... If `earliest_first` is set to true this will be the index number of the earliest ledger queried, or the most recent one if `earliest_first` is set to false. Defaults to the first ledger the `rippled` has in its complete ledger
+    + end_ledger = `(latest ledger in rippled)` (optional, integer, `5000000`) ... If `earliest_first` is set to true this will be the index number of the most recent ledger queried, or the earliest one if `earliest_first` is set to false. Defaults to the last ledger the `rippled` has in its complete ledger
+    + exclude_failed = `false` (optional, boolean) ... If set to true, limit the results to payments that were successfully validated and written into the Ripple Ledger
+    + source_account (optional, Ripple Address, `rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz`) ... If specified, limit the results to payments initiated by a particular account
+    + destination_account (optional, Ripple Address, `rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r`) ... If specified, limit the results to payments made to a particular account
+    + earliest_first = `true` (optional, boolean) ... Determines whether results should be displayed in ascending or descending order, with respect to the ledger/time at which they were validated
+    + results_per_page = `10` (optional, integer) ... Number of results to display per page
+    + page = `1` (optional, integer) ... Page number. Note that if fewer results than the `results_per_page` are returned, there are no pages
+
++ Response 200
+
