@@ -60,7 +60,9 @@ XRP amounts are formatted in the same way, with issuer set to an empty string:
 - `source_balance_changes` - Parsed from the validated transaction metadata, this array of [Amounts](#Amounts) represents all of the changes to balances held by the source_account. Most often this will have one amount representing the Ripple Network fee and, if the source_amount was not XRP, one amount representing the actual source_amount that was sent
 - `destination_balance_changes` - Parsed from the validated transaction metadata, this array of [Amounts](#Amounts) represents the changes to balances held by the destination_account. For those receiving payments this is important to check because if the partial_payment flag is set this value may be less than the destination_amount
 
-### POST /v1/payments
+## Payment Submission [/v1/payments]
+
+### POST 
 
 Submit a payment.
 
@@ -150,7 +152,8 @@ Submit a payment.
     }
     ```
 
-### GET /v1/accounts/{address}/payments/{hash,client_resource_id}
+## Individual Payment Retrieval [/v1/accounts/{address}/payments/{hash,client_resource_id}]
+### GET
 
 Retrieve the details of a particular payment from `rippled` or, in the case of one submitted to `ripple-rest` that failed locally, the local database of `ripple-rest`. 
 
@@ -161,7 +164,8 @@ Retrieve the details of a particular payment from `rippled` or, in the case of o
     
 + Response 200
 
-### GET /v1/accounts/{address}/payments{?start_ledger,end_ledger,exclude_failed,source_account,destination_account,earliest_first,results_per_page,page}
+## Bulk Payment Retrieval [/v1/accounts/{address}/payments{?start_ledger,end_ledger,exclude_failed,source_account,destination_account,earliest_first,results_per_page,page}]
+### GET
 
 Retrieve the details of multiple payments from `rippled` and `ripple-rest`. The response will contain an array of objects that each have a `client_resource_id` field and a `payment` field.
 
