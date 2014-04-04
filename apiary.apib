@@ -304,7 +304,9 @@ If the value of either the base_amount or counter_amount is omitted, a bignumber
 + `hash` - If the order is returned from a historical query, the hash of the last transaction that modified the order
 + `previous` - If the order is returned from a historical query, the URI to retrieve the previous state of the order
 
-### POST /v1/orders
+## Order Submission [/v1/orders]
+
+### POST 
 
 Submit a new order.
 
@@ -401,7 +403,9 @@ Submit a new order.
   }
   ```
 
-### GET /v1/accounts/{address}/orders/{sequence,client_resource_id}
+## Order Retrieval and Cancellation [/v1/accounts/{address}/orders/{sequence,client_resource_id}]
+
+### GET 
 
 Retrieve the details of a particular outstanding order.
 
@@ -413,7 +417,7 @@ Retrieve the details of a particular outstanding order.
 
 + Response 200
 
-### DELETE /v1/accounts/{address}/orders/{sequence,client_resource_id}
+### DELETE
 
 Delete an outstanding order.
 
@@ -435,7 +439,9 @@ Delete an outstanding order.
 
 + Response 200
 
-### GET /v1/accounts/{address}/orders{?bid_currency,ask_currency,start_ledger,end_ledger}
+## Account Orders [/v1/accounts/{address}/orders{?bid_currency,ask_currency,start_ledger,end_ledger}]
+
+### GET
 
 Retrieve details of the specified account's orders. If `start_ledger` and `end_ledger` are *not* specified, the results will include only outstanding orders. 
 
@@ -450,7 +456,8 @@ If `start_ledger` and/or `end_ledger` are specified the results will represent a
 
 + Response 200
 
-### GET /v1/orders/{base_currency}/{counter_currency}{?bids_or_asks,cutoff_price,start_ledger,end_ledger}
+## Orderbooks [/v1/orders/{base_currency}/{counter_currency}{?bids_or_asks,cutoff_price,start_ledger,end_ledger}]
+### GET 
 
 Retrieve orders from the order book identified by the given base and counter currencies. The `bids_or_asks` parameter can be set to limit results to either bids or asks only.
 
