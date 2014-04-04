@@ -442,7 +442,7 @@ Retrieve the details of a particular outstanding order.
 
 + Parameters
 
-  + account (required, Ripple Address) ... The owner account
+  + address (required, Ripple Address) ... The Ripple address of the owner's account
   + sequence (optional, integer) ... The sequence number of the order to retrieve. All orders can be uniquely identified by the account that placed them and their sequence number. Either the sequence number or the client_resource_id must be supplied
   + client_resource_id (optional, string of ASCII-printable characters, `71609718-e19b-46b3-9ec7-a11441748f5f`) ... The client-supplied unique identifier of an order submitted through `ripple-rest`. Note that these are only stored in `ripple-rest`'s, not in the order details on Ripple. Either the client_resource_id or the sequence number must be supplied
 
@@ -454,7 +454,7 @@ Delete an outstanding order.
 
 + Parameters
 
-  + account (required, Ripple Address) ... The owner account
+  + address (required, Ripple Address) ... The Ripple address of the owner's account
   + sequence (optional, integer) ... The sequence number of the order to delete. All orders can be uniquely identified by the account that placed them and their sequence number
   + client_resource_id (optional, string of ASCII-printable characters, `71609718-e19b-46b3-9ec7-a11441748f5f`) ... The client-supplied unique identifier of an order submitted through `ripple-rest`. Note that these are only stored in `ripple-rest`'s, not in the order details on Ripple. Either the client_resource_id or the sequence number must be supplied
 
@@ -480,6 +480,7 @@ If `start_ledger` and/or `end_ledger` are specified the results will represent a
 
 + Parameters
 
+  + address (required, Ripple Address) ... The Ripple address of the owner's account
   + base_currency (optional, 3-character standard currency code or 20-byte hex representation + optional issuer, `XRP`) ... Limit results to orders with the specified base currency
   + counter_currency (optional, 3-character standard currency code or 20-byte hex representation + optional issuer, `USD+r...`) ... Limit results to orders with the specified counter currency
   + start_ledger = `(earliest ledger in rippled if end_ledger is specified)` (optional, integer, `5000000`) ... Retrieve the modifications to all of the account's orders since the given ledger. If end_ledger is set but start_ledger is not, start_ledger will default to the earliest ledger in the rippled's database
