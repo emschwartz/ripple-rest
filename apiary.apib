@@ -4,6 +4,31 @@ HOST: https://{your ripple-rest server}
 # ripple-rest
 A RESTful API for interacting with the Ripple Network.
 
+## Differences from standard Ripple data formats
+
+### The `client_resource_id`
+
+The `client_resource_id` is a new field introduced by this API that is used to prevent duplicate resource submissions and confirm that submissions have been validated.
+
+The `client_resource_id` is required for all submissions to `ripple-rest`. If another resource with the same `client_resource_id` as one that this instance of `ripple-rest` has marked as `pending` or `validated`, `ripple-rest` will assume that the second one was submitted accidentally. This helps clients prevent double spending on payments, even if the connection to `ripple-rest` is interrupted before the client can confirm the success or failure of a payment. 
+
+Universally Unique Identifiers (UUIDs), are recommended for the `client_resource_id`. For more information on UUIDs see [here](http://en.wikipedia.org/wiki/Universally_unique_identifier). Note that 256-bit hex strings are disallowed because of the potential confusion with transaction hashes.
+
+### New data formats
+
+This API uses different submission and retrieval formats for payments and other transactions than other Ripple technologies. These new formats are intended to standardize fields across different transaction types (Payments, Orders, etc). See each resource section for more information.
+
+### No XRP "drops"
+
+Both `rippled` and `ripple-lib` use XRP "drops", or millionths (1/1000000) of an XRP, to denote amounts in XRP. This API uses whole XRP units in amount fields and in reporting network transaction fees paid.
+
+### XRP Amount as an object
+
+Outside of this API, XRP Amounts are usually denoted by a string representing XRP drops. Not only does this API not use XRP drops, for consistency XRP represented here as an `Amount` object like all other currencies. See the [`Amount`](#amount) format for more information.
+
+### UNIX Epoch instead of Ripple Epoch
+
+This API uses the more standard UNIX timestamp instead of the Ripple Epoch Offset to denote times. The UNIX timestamp is the number of milliseconds since January 1st, 1970 (00:00 UTC). In `rippled` timestamps are stored as the number of seconds since the Ripple Epoch, January 1st, 2000 (00:00 UTC).
 
 ## Amounts
 
