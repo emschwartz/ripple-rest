@@ -233,18 +233,7 @@ Although `rippled` does not use the concepts of base and counter currencies, `ri
 
 1. ZAR/JPY
 
-## Order Format
-
-### Minimum Required Fields
-
-+ `account` - Ripple Address of the order's creator
-+ `is_bid` - Order is a bid if true, or an ask otherwise
-+ `base_amount` - If the order is a bid, the [Amount](#Amounts) representing what the order's creator wishes to buy. If the order is an ask, the [Amount](#Amounts) representing what the order's creator wishes to sell. If an order is partially or fully consumed this value will decrease. *See Note below
-+ `counter_amount` - If the order is a bid, the [Amount](#Amounts) representing what the order's creator wishes to sell. If the order is an ask, the [Amount](#Amounts) representing what the order's creator wishes to buy. If an order is partially or fully consumed this value will decrease. *See Note below
-+ `exchange_rate` - The quantity of the *counter* currency needed to buy 1 unit of the base currency. This value is fixed when the order is created and will never change, even if the order is partially or fully consumed and rounding error causes this value to not exactly equal the counter_amount divided by the base_amount. *See Note below
-
-----------
-__Note about Amounts and Exchange Rate:__
+## Note about Amounts and Exchange Rate
 
 `rippled` uses the concepts of "TakerPays" and "TakerGets" to define the terms of an order. `ripple-rest` uses the currency prioritization and exceptions list to translate "base" and "counter" amounts into the format used by `rippled`.
 
@@ -285,10 +274,18 @@ or
 }
 ```
 
-If the value of either the base_amount or counter_amount is omitted, a bignumber library will be used to infer the value omitted from the exchange rate and the value that is supplied. `rippled` does not allow submissions to set their own exchange rate so ultimately the order will be submitted with the complete base and counter amounts.
+If the value of either the base_amount or counter_amount is omitted, a bignumber library will be used to retain precision while inferring the value omitted from the exchange rate and the value that is supplied. `rippled` does not allow submissions to set their own exchange rate so ultimately the order will be submitted with the complete base and counter amounts.
 
 
-----------
+## Order Format
+
+### Minimum Required Fields
+
++ `account` - Ripple Address of the order's creator
++ `is_bid` - Order is a bid if true, or an ask otherwise
++ `base_amount` - If the order is a bid, the [Amount](#Amounts) representing what the order's creator wishes to buy. If the order is an ask, the [Amount](#Amounts) representing what the order's creator wishes to sell. If an order is partially or fully consumed this value will decrease. *See _Note about Amounts and Exchange Rate_ above
++ `counter_amount` - If the order is a bid, the [Amount](#Amounts) representing what the order's creator wishes to sell. If the order is an ask, the [Amount](#Amounts) representing what the order's creator wishes to buy. If an order is partially or fully consumed this value will decrease. *See _Note about Amounts and Exchange Rate_ above
++ `exchange_rate` - The quantity of the *counter* currency needed to buy 1 unit of the base currency. This value is fixed when the order is created and will never change, even if the order is partially or fully consumed and rounding error causes this value to not exactly equal the counter_amount divided by the base_amount. *See _Note about Amounts and Exchange Rate_ above
 
 ### Optional Fields
 
@@ -313,27 +310,118 @@ Submit a new order.
 
 + Request
 
-+ Response 200
+  + Body
 
-### GET /v1/accounts/{account}/orders/{sequence}
+  ```
+  {
+    "secret": "s...",
+    "client_resource_id": "71609718-e19b-46b3-9ec7-a11441748f5f",
+    "order": {
+      "account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+      "base_amount": {
+        "value": "10",
+        "currency": "XRP",
+        "issuer": ""
+      },
+      "counter_amount": {
+        "value": "1.0",
+        "currency": "USD",
+        "issuer": "r..."
+      }
+    }
+  }
+  ```
+
+  + Schema
+
+  ```
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Order",
+    "description": "A simplified Order object used by the ripple-rest API (note that \"orders\" are referred to elsewhere in the Ripple protocol as \"offers\")",
+    "type": "object",
+    "properties": {
+      "account": {
+        "description": "The Ripple account address of the order's creator",
+        "$ref": "RippleAddress"
+      },
+      "is_buy": {
+        "description": "If set to true the order it indicates that the creator is looking to receive the base_amount in exchange for the counter_amount. If undefined or set to false it indicates that the creator is looking to sell the base_amount to receive the counter_amount",
+        "type": "boolean"
+      },
+      "base_amount": {
+        "description": "The amount of currency the seller_account is seeking to buy. If other orders take part of this one, this value will change to represent the amount left in the order. This may be specified along with the counter_amount OR exchange_rate but not both. When the order is parsed from the Ripple Ledger the base currency will be determined according to the Priority Ranking of Currencies (XRP,EUR,GBP,AUD,NZD,USD,CAD,CHF,JPY,CNY) and if neither currency is listed in the ranking the base currency will be the one that is alphabetically first",
+        "$ref": "Amount"
+      },
+      "counter_amount": {
+        "description": "The amount of currency being sold. If other orders take part of this one, this value will change to represent the amount left in the order. This may be specified along with the base_amount OR the exchange_rate but not both",
+        "$ref": "Amount"
+      },
+      "exchange_rate": {
+        "description": "A string representation of the order price, defined as the cost one unit of the base currency in terms of the counter currency. This may be specified along with the base_amount OR the counter_amount but not both. If it is unspecified it will be computed automatically based on the counter_amount divided by the base_amount",
+        "$ref": "FloatString"
+      },
+      "expiration_timestamp": {
+        "description": "The ISO combined date and time string representing the point beyond which the order will no longer be considered active or valid",
+        "$ref": "Timestamp"
+      },
+      "ledger_timeout": {
+        "description": "A string representation of the number of ledger closes after submission during which the order should be considered active",
+        "type": "string",
+        "pattern": "^[0-9]*$"
+      },
+      "immediate_or_cancel": {
+        "description": "If set to true this order will only take orders that are available at the time of execution and will not create an entry in the Ripple Ledger",
+        "type": "boolean"
+      },
+      "fill_or_kill": {
+        "description": "If set to true this order will only take orders that fill the base_amount and are available at the time of execution and will not create an entry in the Ripple Ledger",
+        "type": "boolean"
+      },
+      "maximize_buy_or_sell": {
+        "description": "If set to true and it is a buy order it will buy up to the base_amount even if the counter_amount is exceeded, if it is a sell order it will sell up to the counter_amount even if the base_amount is exceeded",
+        "type": "boolean"
+      },
+      "cancel_replace": {
+        "description": "If this is set to the sequence number of an outstanding order, that order will be cancelled and replaced with this one",
+        "type": "string",
+        "pattern": "^d*$"
+      }
+    },
+    "required": ["account"]
+  }
+  ```
+
++ Response 200 (application/json)
+
+  ```
+  {
+    "success": true,
+    "status_url": ".../v1/accounts/rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz/orders/71609718-e19b-46b3-9ec7-a11441748f5f"
+  }
+  ```
+
+### GET /v1/accounts/{address}/orders/{sequence,client_resource_id}
 
 Retrieve the details of a particular outstanding order.
 
 + Parameters
 
   + account (required, Ripple Address) ... The owner account
-  + sequence (required, integer) ... The sequence number of the order to retrieve. All orders can be uniquely identified by the account that placed them and their sequence number
+  + sequence (optional, integer) ... The sequence number of the order to retrieve. All orders can be uniquely identified by the account that placed them and their sequence number. Either the sequence number or the client_resource_id must be supplied
+  + client_resource_id (optional, string of ASCII-printable characters, `71609718-e19b-46b3-9ec7-a11441748f5f`) ... The client-supplied unique identifier of an order submitted through `ripple-rest`. Note that these are only stored in `ripple-rest`'s, not in the order details on Ripple. Either the client_resource_id or the sequence number must be supplied
 
 + Response 200
 
-### DELETE /v1/accounts/{account}/orders/{sequence}
+### DELETE /v1/accounts/{address}/orders/{sequence,client_resource_id}
 
 Delete an outstanding order.
 
 + Parameters
 
   + account (required, Ripple Address) ... The owner account
-  + sequence (required, integer) ... The sequence number of the order to delete. All orders can be uniquely identified by the account that placed them and their sequence number
+  + sequence (optional, integer) ... The sequence number of the order to delete. All orders can be uniquely identified by the account that placed them and their sequence number
+  + client_resource_id (optional, string of ASCII-printable characters, `71609718-e19b-46b3-9ec7-a11441748f5f`) ... The client-supplied unique identifier of an order submitted through `ripple-rest`. Note that these are only stored in `ripple-rest`'s, not in the order details on Ripple. Either the client_resource_id or the sequence number must be supplied
 
 + Request
 
@@ -347,55 +435,44 @@ Delete an outstanding order.
 
 + Response 200
 
-### GET /v1/accounts/{account}/orders?bid_currency,ask_currency
+### GET /v1/accounts/{address}/orders{?bid_currency,ask_currency,start_ledger,end_ledger}
 
-Retrieve details of the specified account's outstanding orders.
+Retrieve details of the specified account's orders. If `start_ledger` and `end_ledger` are *not* specified, the results will include only outstanding orders. 
+
+If `start_ledger` and/or `end_ledger` are specified the results will represent all of the modifications to the account's orders in the given ledger range. Note that orders modified multiple times (e.g. that are partially filled by a series of different orders) will appear once per modification. Individual orders can be uniquely identified by their sequence number. Results are not paginated so the snapshot view is best used on relatively small ledger ranges (e.g. 10 ledgers).
 
 + Parameters
 
   + base_currency (optional, 3-character standard currency code or 20-byte hex representation + optional issuer, `XRP`) ... Limit results to orders with the specified base currency
   + counter_currency (optional, 3-character standard currency code or 20-byte hex representation + optional issuer, `USD+r...`) ... Limit results to orders with the specified counter currency
+  + start_ledger = `(earliest ledger in rippled if end_ledger is specified)` (optional, integer, `5000000`) ... Retrieve the modifications to all of the account's orders since the given ledger. If end_ledger is set but start_ledger is not, start_ledger will default to the earliest ledger in the rippled's database
+  + end_ledger = `(last closed ledger if start_ledger is specified)` (optional, integer, `5000000`) ... Retrieve the modifications to all of the account's orders until the given ledger. If start_ledger is set but end_ledger is not, end_ledger will default to the rippled's last closed ledger
 
 + Response 200
 
-### GET /v1/orders/{base_currency}/{counter_currency}/bids{?cutoff_price}
+### GET /v1/orders/{base_currency}/{counter_currency}{?bids_or_asks,cutoff_price,start_ledger,end_ledger}
 
-Retrieve the outstanding bid orders from the order book identified by the given base and counter currencies.
+Retrieve orders from the order book identified by the given base and counter currencies. The `bids_or_asks` parameter can be set to limit results to either bids or asks only.
+
+If `start_ledger` and/or `end_ledger` are specified, this will retrieve a snapshot of all of the modifications to the orderbook in the specified ledger range. Note that orders modified multiple times (e.g. that are partially filled by a series of different orders) will appear once per modification. Individual orders can be uniquely identified by their account and sequence number. Changes can be merged into the previous state of the orderbook on the client's side by keeping orders indexed by their account and sequence number and adding or updating entries based on the snapshots. Results are not paginated so the snapshot view is best used on relatively small ledger ranges (e.g. 10 ledgers).
 
 + Parameters
 
   + base_currency (required, 3-character standard currency code or 20-byte hex representation + required issuer unless currency is XRP, `XRP`) ... Retrieve current orderbook where this is the base currency
   + counter_currency (required, 3-character standard currency code or 20-byte hex representation + required issuer unless currency is XRP, `USD+r...`) ... Retrieve current orderbook where this is the counter currency
-  + cutoff_price (optional, floating point number, `0.00775`) ... If specified, limit results to orders with prices greater than this value
+  + bids_or_asks (optional, "bids" or "asks", `bids`) ... Limit the results to either bids or asks
+  + cutoff_price (optional, floating point number, `0.00775`) ... Must be used in combination with bids_or_asks. If specified with bids_or_asks set to bids, limit results to orders with exchange_rates greater than this value. If specified with bids_or_asks set to asks, limit results to orders with exchange_rates less than this value
+  + start_ledger = `(earliest ledger in rippled if end_ledger is specified)` (optional, integer, `5000000`) ... Retrieve a snapshot of the changes to the orderbook since the given ledger. If end_ledger is set but start_ledger is not, start_ledger will default to the earliest ledger in the rippled's database
+  + end_ledger = `(last closed ledger if start_ledger is specified)` (optional, integer, `5000010`) ... Retrieve a snapshot of the changes to the orderbook until the given ledger. If start_ledger is set but end_ledger is not, end_ledger will default to the rippled's last closed ledger
+
 
 + Response 200
 
   ```
   {
     "success": true,
-    "orders": [{
-      /* ... Order ... */
-    }, {
-      /* ... Order ... */
-    }]
-  }
-  ```
-
-### GET /v1/orders/{base_currency}/{counter_currency}/asks{?cutoff_price}
-
-Retrieve the outstanding ask orders from the order book identified by the given base and counter currencies.
-
-+ Parameters
-
-  + base_currency (required, 3-character standard currency code or 20-byte hex representation + required issuer unless currency is XRP, `XRP`) ... Retrieve current orderbook where this is the base currency
-  + counter_currency (required, 3-character standard currency code or 20-byte hex representation + required issuer unless currency is XRP, `USD+r...`) ... Retrieve current orderbook where this is the counter currency
-  + cutoff_price (optional, floating point number, `0.00775`) ... If specified, limit results to orders with prices less than this value
-
-+ Response 200
-
-  ```
-  {
-    "success": true,
+    "start_ledger": 5000000,
+    "end_ledger": 5000010,
     "orders": [{
       /* ... Order ... */
     }, {
