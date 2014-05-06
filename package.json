@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "express": "~3.4.7",
-    "ripple-lib": "git://github.com/ripple/ripple-lib.git#903e480130fa24001e27b48b07ef3171f2fcc9e5",
+    "ripple-lib": "git+ssh://git@github.com:ripple/ripple-lib.git#0.7.36",
     "grunt": "~0.4.2",
     "grunt-db-migrate": "~0.1.4",
     "db-migrate": "~0.6.3",
