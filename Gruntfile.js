@@ -23,7 +23,7 @@ module.exports = function(grunt) {
           reporter: 'spec'
         },
       local: {
-        src: ['test/**/*.test.js']
+        src: ['test/**/*-test.js']
       }
     },
 
