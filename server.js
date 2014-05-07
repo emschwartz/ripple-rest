@@ -177,8 +177,8 @@ app.get('/v1/server', api.info.serverStatus);
 app.get('/v1/server/connected', api.info.isConnected);
 
 /* Payments */
-app.post('/v1/payments', api.submission.submit);
-app.post('/v1/accounts/:account/payments', api.submission.submit);
+app.post('/v1/payments', api.submission.submitPayment);
+app.post('/v1/accounts/:account/payments', api.submission.submitPayment);
 
 app.get('/v1/accounts/:account/payments', api.payments.getBulkPayments);
 app.get('/v1/accounts/:account/payments/:identifier', api.payments.getPayment);

@@ -45,7 +45,7 @@ function _getNotification($, req, res, callback) {
   };
 
   function attachSurroundingIdentifiers(notification_details, async_callback) {
-    attachPreviousAndNextTransactionIdentifiers($.remote, $.dbinterface, notification_details, async_callback);
+    attachPreviousAndNextTransactionIdentifiers($, notification_details, async_callback);
   };
 
   function parseNotification(notification_details, async_callback) {
@@ -203,7 +203,7 @@ function attachPreviousAndNextTransactionIdentifiers(remote, dbinterface, notifi
  *  ledger_index_min or ledger_index_max set to this ledger index
  */
 
-function getPossibleNextTransactions(remote, dbinterface, notification_details, opts, callback) {
+function getPossibleNextTransactions($, notification_details, opts, callback) {
   var params = {
     account: notification_details.account,
     max: opts.num_transactions_in_ledger + 1,
@@ -220,5 +220,124 @@ function getPossibleNextTransactions(remote, dbinterface, notification_details, 
     params.ledger_index_min = notification_details.transaction.ledger_index;
   }
 
-  transactions_lib.getAccountTransactions(remote, dbinterface, params, callback);
+  transactions_lib.getAccountTransactions($, params, callback);
 };
+
+function parseNotificationFromTransaction(notification_details, opts, callback){
+  if (typeof opts === 'function') {
+    callback = opts;
+    opts = transaction;
+  }
+
+  var transaction = notification_details.transaction || notification_details, 
+    account = notification_details.account, 
+    previous_transaction_identifier = notification_details.previous_transaction_identifier,
+    next_transaction_identifier = notification_details.next_transaction_identifier,
+    client_resource_id = notification_details.client_resource_id || opts.client_resource_id,
+    types = opts.types;
+
+  if (!transaction) {
+    callback(null, null);
+    return;
+  }
+
+  var notification = {
+    account: '',
+    type: '',
+    direction: '',
+    state: '',
+    result: '',
+    ledger: '',
+    hash: '',
+    timestamp: '',
+    transaction_url: '',
+    previous_hash: '',
+    previous_notification_url: '',
+    next_hash: '',
+    next_notification_url: '',
+    client_resource_id: ''
+  };
+
+  notification.account = account;
+
+  if (transaction.Account) {
+    if (account === transaction.Account) {
+      notification.direction = 'outgoing';
+    } else if (transaction.TransactionType === 'Payment' && transaction.Destination !== account) {
+      notification.direction = 'passthrough';
+    } else {
+      notification.direction = 'incoming';
+    }
+  }
+
+  if (transaction.hash) {
+    notification.hash = transaction.hash;
+  }
+
+  if (client_resource_id) {
+    notification.client_resource_id = client_resource_id;
+  }
+
+  if (transaction.TransactionType) {
+    notification.type = transaction.TransactionType.toLowerCase();
+
+    if (notification.type === 'payment') {
+      notification.transaction_url = '/v1/accounts/' + notification.account + '/payments/' + (transaction.from_local_db ? notification.client_resource_id : notification.hash);
+    } else {
+      // TODO add support for lookup by client_resource_id for transaction endpoint
+      notification.transaction_url = '/v1/transaction/' + notification.hash;
+    }
+
+    if (notification.type === 'offercreate' || notification.type === 'offercancel') {
+      notification.type = 'order';
+    }
+
+    if (notification.type === 'trustset') {
+      notification.type = 'trustline';
+    }
+
+    if (notification.type === 'accountset') {
+      notification.type = 'account';
+    }
+  }
+
+  if (transaction.ledger_index) {
+    notification.ledger = '' + transaction.ledger_index;
+  }
+
+  if (next_transaction_identifier) {
+    notification.next_notification_url = '/v1/accounts/' + notification.account + '/notifications/' + next_transaction_identifier + (types ? '?types=' + types.join(',') : '');
+  }
+
+  if (previous_transaction_identifier) {
+    notification.previous_notification_url = '/v1/accounts/' + notification.account + '/notifications/' + previous_transaction_identifier + (types ? '?types=' + types.join(',') : '');
+  }
+
+  if (notification_details.previous_hash) {
+    notification.previous_hash = notification_details.previous_hash;
+  }
+
+  if (notification_details.next_hash) {
+    notification.next_hash = notification_details.next_hash;
+  }
+
+  if (transaction.date) {
+    notification.timestamp = '' + new Date(transaction.date).toISOString();
+  }
+
+  if (transaction.meta) {
+    notification.result = transaction.meta.TransactionResult;
+  }
+
+  if (transaction.state) {
+    notification.state = transaction.state;
+  } else {
+    if (notification.result === 'tesSUCCESS') {
+      notification.state = 'validated';
+    } else if (notification.result) {
+      notification.state = 'failed';
+    }
+  }
+
+  callback(null, notification);
+}

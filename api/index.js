@@ -34,7 +34,7 @@ module.exports = (function() {
     },
 
     submission: {
-      submit: Submission.submit
+      submitPayment: Submission.submitPayment
     },
 
     payments: {
