@@ -5,13 +5,16 @@ var server_lib = require('../lib/server-lib');
 var validator  = require('../lib/schema-validator');
 
 module.exports = {
+
   DEFAULT_RESULTS_PER_PAGE: 10,
   NUM_TRANSACTION_TYPES: 5,
   DEFAULT_LEDGER_BUFFER: 6,
-  submit: submitRippleLibTransaction,
+
+  submit: submitTransaction,
   get: getTransaction,
-  getTransaction: _getTransaction,
+  getTransactionHelper: getTransactionHelper,
   getAccountTransactions: getAccountTransactions
+
 };
 
 /**
@@ -30,7 +33,7 @@ module.exports = {
  *  @param {Error} error Submission Error
  *  @param {submission response} response The response received from the 'proposed' event
  */
-function submitRippleLibTransaction($, data, res, callback) {
+function submitTransaction($, data, res, callback) {
 
   function ensureConnected(async_callback) {
     server_lib.ensureConnected($.remote, function(err, connected) {
@@ -115,15 +118,15 @@ function submitRippleLibTransaction($, data, res, callback) {
 };
 
 /**
- *  Wrapper around _getTransaction function that is
+ *  Wrapper around getTransactionHelper function that is
  *  meant to be used directly as a client-facing function.
- *  Unlike _getTransaction, it will call next with any errors
+ *  Unlike getTransactionHelper, it will call next with any errors
  *  and send a JSON response to the client on success.
  *
- *  See _getTransaction for parameter details
+ *  See getTransactionHelper for parameter details
  */
 function getTransaction($, req, res, next) {
-  _getTransaction($, req, res, function(err, transaction) {
+  getTransactionHelper($, req, res, function(err, transaction) {
     if (err) {
       next(err);
     } else {
@@ -154,7 +157,7 @@ function getTransaction($, req, res, next) {
  *  @param {Error} error
  *  @param {Transaction} transaction
  */
-function _getTransaction($, req, res, callback) {
+function getTransactionHelper($, req, res, callback) {
   var opts = $.opts || {
     account: req.params.account,
     identifier: req.params.identifier
@@ -176,16 +179,22 @@ function _getTransaction($, req, res, callback) {
 
   function ensureConnected(async_callback) {
     server_lib.ensureConnected($.remote, function(err, connected){
-      if (!connected) {
-        return res.json(500, { success: false, message: 'No connection to rippled' });
+      if (connected) {
+        async_callback();
+      } else if (err) {
+        res.json(500, { success: false, message: err.message });
       } else {
-        async_callback(err);
+        res.json(500, { success: false, message: 'No connection to rippled' });
       }
     });
   };
 
   function queryTransaction(async_callback) {
-    $.dbinterface.getTransaction(opts, function(entry) {
+    $.dbinterface.getTransaction(opts, function(err, entry) {
+      if (err) {
+        return async_callback(err);
+      }
+
       if (entry && entry.transaction) {
         async_callback(null, entry.transaction);
       } else if (entry) {
@@ -263,13 +272,14 @@ function _getTransaction($, req, res, callback) {
  *  @param {Boolean} [true] opts.descending
  *  @param {Boolean} [false] opts.binary
  *  @param {opaque value} opts.marker
+ *  @param {Express.js Response} res
  *  @param {Function} callback
  *
  *  @callback
  *  @param {Error} error
  *  @param {Array of transactions in JSON format} transactions
  */
-function getAccountTransactions($, opts, callback, previous_transactions) {
+function getAccountTransactions($, opts, res, callback, previous_transactions) {
   if (!opts.max) {
     opts.max = module.exports.DEFAULT_RESULTS_PER_PAGE;
   }
@@ -289,10 +299,12 @@ function getAccountTransactions($, opts, callback, previous_transactions) {
 
   function ensureConnected(async_callback) {
     server_lib.ensureConnected($.remote, function(err, connected){
-      if (!connected) {
-        return res.json(500, { success: false, message: 'No connection to rippled' });
+      if (connected) {
+        async_callback();
+      } else if (err) {
+        res.json(500, { success: false, message: err.message });
       } else {
-        async_callback(err);
+        res.json(500, { success: false, message: 'No connection to rippled' });
       }
     });
   };
