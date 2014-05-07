@@ -338,10 +338,88 @@ describe('api/transactions', function(){
 
     });
 
-    // it('should save errors that happen after the "proposed" event to the database but not report them to the client', function(){
+    it('should save errors that happen after the "proposed" event to the database but not report them to the client', function(done){
+      
+      var callback_function_already_called = false;
 
+      function saveTransaction(transaction_data, callback) {
+        if (transaction_data.state === 'failed' && callback_function_already_called) {
+          done();
+        }
+      };
+       
+      var dbinterface = {
+        getTransaction: function(params, callback) {
+          //console.log('dbinterface.getTransaction');
+          callback();
+        },
+        saveTransaction: saveTransaction
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+       
+      Server._lastLedgerClose = Date.now() - 1;
+       
+      remote._getServer = function() {
+        return Server;
+      };
+       
+      var test_transaction = new ripple.Transaction();
+       
+      var client_resource_id = 'ebb9d857-fc71-440f-8b0a-f1ea3535986a';
+       
+      test_transaction.payment({
+        from: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
+        to: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
+        amount: '10XRP'
+      });
+       
+      test_transaction.remote = remote;
+      test_transaction.tx_json.Sequence = 10;
+       
+      test_transaction.complete = function() {
+        return test_transaction;
+      };
+       
+      var transaction_manager = remote.account(test_transaction.tx_json.Account)._transactionManager;
+       
+      transaction_manager._nextSequence = 1;
+       
+      transaction_manager._request = function(transaction) {
+        transaction.emit('submitted');
+        transaction.emit('proposed');
 
-    // });
+        // Simulating an error returned after the initial result 
+        // has already been sent back to the client
+        transaction.emit('error', new Error('Some Error'));
+      };
+       
+      transactions.submit(
+        {
+          remote: remote,
+          dbinterface: dbinterface
+        },
+        {
+          account: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuMX',
+          transaction: test_transaction,
+          client_resource_id: client_resource_id
+        },
+        { 
+          json: console.log.bind(this, 'res.JSON') 
+        },
+        function(err, res) {          
+          expect(err).not.to.exist;
+          expect(res).to.equal(client_resource_id);
+
+          callback_function_already_called = true;
+        });
+
+    });
 
   });
 
