@@ -207,93 +207,89 @@ describe('api/transactions', function(){
 
     });
 
-    // it('should save the transaction to the database every time the transaction state is changed', function(done){
+    it('should save the transaction to the database every time the transaction state is changed', function(done){
 
-    //   var test_transaction = new ripple.Transaction(),
-    //     client_resource_id = 'ebb9d857-fc71-440f-8b0a-f1ea3535986a';
-    //   test_transaction.payment({
-    //     from: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
-    //     to: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
-    //     amount: '10XRP'
-    //   });
-    //   test_transaction.tx_json.Sequence = 10;
+      var test_transaction = new ripple.Transaction(),
+        client_resource_id = 'ebb9d857-fc71-440f-8b0a-f1ea3535986a';
+      test_transaction.payment({
+        from: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
+        to: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
+        amount: '10XRP'
+      });
+      test_transaction.tx_json.Sequence = 10;
 
-    //   var states = ['submitted', 'pending', 'validated'];
+      test_transaction.on('save', function(){
+        console.log('save emitted');
+      });
 
-    //   // Mock the submit function with one that goes through the normal states
-    //   // a transaction goes through after submission
-    //   test_transaction.submit = function(callback) {
-    //     var self = this;
+      // Count the number of times saveTransaction is called and
+      // call done when it has been called once per state change
+      var times_called = 0;
+      function saveTransaction(transaction_data, callback) {
+        console.log(transaction_data.transaction.state);
+        if (transaction_data.transaction.state === states[times_called]) {
+          times_called++;
+        }
 
-    //     self.remote.account(self.tx_json.Account).submit(self);
+        if (times_called === states.length + 1) {
+          done();
+        }
+      }
 
-    //     process.nextTick(function() {
-    //       remote.account(self.tx_json.Account)._transactionManager.emit('sequence_loaded');
-    //       // Save is also emitted when the transaction is signed
-    //       self.emit('save');
-    //       states.forEach(function(state){
-    //         self.setState(state);
-    //       });
-    //     });
+     var dbinterface = {
+        getTransaction: function(params, callback) {
+          callback();
+        },
+        saveTransaction: saveTransaction
+      };
 
-    //   };
+      var remote = new ripple.Remote({
+        servers: [],
+        storage: dbinterface
+      });
+      remote._getServer = function() {
+        return {
+          _lastLedgerClose: Date.now() - 1 // Considered connected
+        };
+      };
+      remote.connect = function(){};
 
-    //   test_transaction.on('save', function(){
-    //     console.log('save emitted');
-    //   });
+      // Add account to initialize TransactionManager
+      var transaction_manager = remote.account(test_transaction.tx_json.Account)._transactionManager;
 
-    //   // Count the number of times saveTransaction is called and
-    //   // call done when it has been called once per state change
-    //   var times_called = 0;
-    //   function saveTransaction(transaction_data, callback) {
-    //     console.log(transaction_data.transaction.state);
-    //     if (transaction_data.transaction.state === states[times_called]) {
-    //       times_called++;
-    //     }
+      // Mock the _request function so it goes through the normal transaction states
+      var states = ['submitted', 'pending', 'validated'];
+      transaction_manager._request = function() {
 
-    //     if (times_called === states.length + 1) {
-    //       done();
-    //     }
-    //   }
+        console.log('_request called');
+        var self = this;
 
-    //  var dbinterface = {
-    //     getTransaction: function(params, callback) {
-    //       callback();
-    //     },
-    //     saveTransaction: saveTransaction
-    //   };
+          self.emit('save');
+          states.forEach(function(state){
+            self.setState(state);
+          });
+      };
 
-    //   var remote = new ripple.Remote({
-    //     servers: [],
-    //     storage: dbinterface
-    //   });
-    //   remote._getServer = function() {
-    //     return {
-    //       _lastLedgerClose: Date.now() - 1 // Considered connected
-    //     };
-    //   };
-    //   remote.connect = function(){};
+      test_transaction.remote = remote;
 
-    //   test_transaction.remote = remote;
+      transactions.submit({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
+        transaction: test_transaction,
+        client_resource_id: client_resource_id
+      }, {
+        json: function() {}
+      }, function(err, res){
+        if (err) {
+          console.log(err, err.stack);
+        }
+      });
 
-    //   transactions.submit({
-    //     remote: remote,
-    //     dbinterface: dbinterface
-    //   }, {
-    //     account: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
-    //     transaction: test_transaction,
-    //     client_resource_id: client_resource_id
-    //   }, {
-    //     json: function() {}
-    //   }, function(err, res){
-    //     if (err) {
-    //       console.log(err, err.stack);
-    //     }
-    //   });
+    });
 
-    // });
-
-    it('should call the callback with the client_resource_id when the "proposed" event is emitted', function(){
+    it('should call the callback with the client_resource_id when the "proposed" event is emitted', function(done){
 
       var test_transaction = new ripple.Transaction(),
         client_resource_id = 'ebb9d857-fc71-440f-8b0a-f1ea3535986a';
@@ -332,15 +328,16 @@ describe('api/transactions', function(){
         client_resource_id: client_resource_id
       }, {
         json: function() {}
-      }, function(err, res){
+      }, function(err, client_resource_id){
         expect(err).not.to.exist;
-        expect(res.client_resource_id).to.equal(client_resource_id);
+        expect(client_resource_id).to.equal(client_resource_id);
         done();
       });
 
     });
 
     // it('should save errors that happen after the "proposed" event to the database but not report them to the client', function(){
+
 
     // });
 
