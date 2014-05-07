@@ -207,87 +207,89 @@ describe('api/transactions', function(){
 
     });
 
-    // it('should save the transaction to the database every time the transaction state is changed', function(done){
+    it('should save the transaction to the database every time the transaction state is changed', function(done){
 
-    //   var test_transaction = new ripple.Transaction(),
-    //     client_resource_id = 'ebb9d857-fc71-440f-8b0a-f1ea3535986a';
-    //   test_transaction.payment({
-    //     from: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
-    //     to: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
-    //     amount: '10XRP'
-    //   });
-    //   test_transaction.tx_json.Sequence = 10;
+      var states = [ 'unsubmitted', 'submitted', 'pending', 'validated' ];
+ 
+      // Count the number of times saveTransaction is called and
+      // call done when it has been called once per state change
+      var times_called = 0;
+       
+      function saveTransaction(transaction_data, callback) {
+        var state = transaction_data.state;
+       
+        if (state === states[times_called]) {
+          times_called++;
+        }
+              
+        if (times_called === states.length) {
+          done();
+        }
+      };
+       
+      var dbinterface = {
+        getTransaction: function(params, callback) {
+          //console.log('dbinterface.getTransaction');
+          callback();
+        },
+        saveTransaction: saveTransaction
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+       
+      Server._lastLedgerClose = Date.now() - 1;
+       
+      remote._getServer = function() {
+        return Server;
+      };
+       
+      var test_transaction = new ripple.Transaction();
+       
+      var client_resource_id = 'ebb9d857-fc71-440f-8b0a-f1ea3535986a';
+       
+      test_transaction.payment({
+        from: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
+        to: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
+        amount: '10XRP'
+      });
+       
+      test_transaction.remote = remote;
+      test_transaction.tx_json.Sequence = 10;
+       
+      test_transaction.complete = function() {
+        return test_transaction;
+      };
+       
+      var transaction_manager = remote.account(test_transaction.tx_json.Account)._transactionManager;
+       
+      transaction_manager._nextSequence = 1;
+       
+      transaction_manager._request = function(transaction) {
+        transaction.emit('save');
+        states.forEach(function(state) {
+          transaction.setState(state);
+        });
+      };
+       
+      transactions.submit(
+        {
+          remote: remote,
+          dbinterface: dbinterface
+        },
+        {
+          account: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuMX',
+          transaction: test_transaction,
+          client_resource_id: client_resource_id
+        },
+        { json: console.log.bind(this, 'res.JSON') }
+      );
 
-    //   test_transaction.on('save', function(){
-    //     console.log('save emitted');
-    //   });
-
-    //   // Count the number of times saveTransaction is called and
-    //   // call done when it has been called once per state change
-    //   var times_called = 0;
-    //   function saveTransaction(transaction_data, callback) {
-    //     console.log(transaction_data.transaction.state);
-    //     if (transaction_data.transaction.state === states[times_called]) {
-    //       times_called++;
-    //     }
-
-    //     if (times_called === states.length + 1) {
-    //       done();
-    //     }
-    //   }
-
-    //  var dbinterface = {
-    //     getTransaction: function(params, callback) {
-    //       callback();
-    //     },
-    //     saveTransaction: saveTransaction
-    //   };
-
-    //   var remote = new ripple.Remote({
-    //     servers: [],
-    //     storage: dbinterface
-    //   });
-    //   remote._getServer = function() {
-    //     return {
-    //       _lastLedgerClose: Date.now() - 1 // Considered connected
-    //     };
-    //   };
-    //   remote.connect = function(){};
-
-    //   // Add account to initialize TransactionManager
-    //   var transaction_manager = remote.account(test_transaction.tx_json.Account)._transactionManager;
-
-    //   // Mock the _request function so it goes through the normal transaction states
-    //   var states = ['submitted', 'pending', 'validated'];
-    //   transaction_manager._request = function() {
-
-    //     console.log('_request called');
-    //     var self = this;
-
-    //       self.emit('save');
-    //       states.forEach(function(state){
-    //         self.setState(state);
-    //       });
-    //   };
-
-    //   test_transaction.remote = remote;
-
-    //   transactions.submit({
-    //     remote: remote,
-    //     dbinterface: dbinterface
-    //   }, {
-    //     account: 'rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM',
-    //     transaction: test_transaction,
-    //     client_resource_id: client_resource_id
-    //   }, {
-    //     json: function() {}
-    //   }, function(err, res){
-    //     if (err) {
-    //       console.log(err, err.stack);
-    //     }
-    //   });
-
-    // });
+    });
 
     it('should call the callback with the client_resource_id when the "proposed" event is emitted', function(done){
 
