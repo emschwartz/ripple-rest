@@ -99,6 +99,7 @@ function submitTransaction($, data, res, callback) {
     // rippled. This does not guarantee that the transaction will be validated but it is at this
     // point that we want to respond to the user that the transaction has been submitted
     transaction.once('proposed', function() {
+      transaction.removeListener('error', async_callback);
       async_callback(null, transaction._clientID);
     });
 
