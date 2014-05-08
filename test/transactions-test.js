@@ -472,12 +472,8 @@ describe('api/transactions', function(){
     it('should respond with an error if the identifier is neither a hash nor a valid client_resource_id', function(done){
 
       var $ = {
-        remote: {
-
-        },
-        dbinterface: {
-
-        }
+        remote: {},
+        dbinterface: {}
       };
 
       var req = {
@@ -495,9 +491,7 @@ describe('api/transactions', function(){
         }
       };
 
-      var callback = function(err, res){
-
-      };
+      var callback = function(err, res){};
 
       transactions.getTransactionHelper($, req, res, callback);
 
@@ -520,9 +514,7 @@ describe('api/transactions', function(){
           connect: function(){},
           removeListener: function(){}
         },
-        dbinterface: {
-
-        }
+        dbinterface: {}
       };
 
       var req = {
@@ -540,9 +532,7 @@ describe('api/transactions', function(){
         }
       };
 
-      var callback = function(err, res){
-
-      };
+      var callback = function(err, res){};
 
       transactions.getTransactionHelper($, req, res, callback);
 
@@ -551,9 +541,6 @@ describe('api/transactions', function(){
     });
 
     it('should query the remote if no record is found in the database', function(done){
-
-      var normal_CONNECTION_TIMEOUT = server_lib.CONNECTION_TIMEOUT;
-      server_lib.CONNECTION_TIMEOUT = 0;
 
       var tx_hash = '1C3FFA4EDD96193BE0DF65E0C2D8692803538DEF761E721B571812B7B527D702';
 
@@ -589,25 +576,16 @@ describe('api/transactions', function(){
       };
 
       var res = {
-        json: function(status_code, json_response) {
-
-        }
+        json: function(status_code, json_response) {}
       };
 
-      var callback = function(err, res){
-
-      };
+      var callback = function(err, res){};
 
       transactions.getTransactionHelper($, req, res, callback);
-
-      server_lib.CONNECTION_TIMEOUT = normal_CONNECTION_TIMEOUT;
 
     });
 
     it('should query the remote if only the record in the client_resource_id_records is found', function(done){
-
-      var normal_CONNECTION_TIMEOUT = server_lib.CONNECTION_TIMEOUT;
-      server_lib.CONNECTION_TIMEOUT = 0;
 
       var tx_hash = '1C3FFA4EDD96193BE0DF65E0C2D8692803538DEF761E721B571812B7B527D702';
 
@@ -664,14 +642,9 @@ describe('api/transactions', function(){
 
       transactions.getTransactionHelper($, req, res, callback);
 
-      server_lib.CONNECTION_TIMEOUT = normal_CONNECTION_TIMEOUT;
-
     });
 
     it('should respond with an error if the account is specified but the transaction did not affect the given account', function(done){
-
-      var normal_CONNECTION_TIMEOUT = server_lib.CONNECTION_TIMEOUT;
-      server_lib.CONNECTION_TIMEOUT = 0;
 
       var tx_hash = '1C3FFA4EDD96193BE0DF65E0C2D8692803538DEF761E721B571812B7B527D702';
 
@@ -691,7 +664,7 @@ describe('api/transactions', function(){
                 TransactionType : "Payment",
                 TxnSignature : "304402200BFFC043A170F37F95F7921AA8A9C06F0D6D78E45AFC3380F154AA33858D9A410220557D3617006FEE7A32C8534632FED9AE8ECAD4FD20D206DA23D6DCE005EE6AD5",
                 date : 452727320,
-                hash : "9C29E7850FC2F5DFCE938F5F2F94969C6A899C03CADDF1423E790EA98F7FA2EA",
+                hash : tx_hash,
                 inLedger : 6487166,
                 ledger_index : 6487166
               });
@@ -729,21 +702,208 @@ describe('api/transactions', function(){
         }
       };
 
-      var callback = function(err, res){
+      var callback = function(err, res){};
 
+      transactions.getTransactionHelper($, req, res, callback);
+
+    });
+
+    it('should query the remote to attach the date to the transaction', function(done){
+
+      var tx_hash = '1B724D76A5B800B3AB380A92D0EFCD542F033D73A872A67B9EF11B77C58AD38B';
+
+      var containing_ledger = {
+        "accepted": true,
+        "account_hash": "25D7F5E99981336F685FAC95DDB2CC181AC449215CF874E330315090C9309677",
+        "close_time": 452725380,
+        "close_time_human": "2014-May-06 21:03:00",
+        "close_time_resolution": 10,
+        "closed": true,
+        "hash": "427CE04FA2756F9F38B0A875EFA90191189D13BCE73B4A89E0A14DA63D50871F",
+        "ledger_hash": "427CE04FA2756F9F38B0A875EFA90191189D13BCE73B4A89E0A14DA63D50871F",
+        "ledger_index": "6486744",
+        "parent_hash": "C32ED042C7605D31AA9163A5BAB291DEFE8A85CD35ADFA24B2B16E323BA49D04",
+        "seqNum": "6486744",
+        "totalCoins": "99999992265525078",
+        "total_coins": "99999992265525078",
+        "transaction_hash": "1D575B7E22FD7C75B3ECA4AF3CB437A0D8557F31624073169FA75B8AF8D9C61B"
+      };
+
+      var $ = {
+        remote: {
+          requestLedger: function(ledger_index, callback) {
+            if (ledger_index === 6486744) {
+              callback(null, {
+                "ledger": containing_ledger
+              });
+            } else {
+              callback(new Error('Wrong ledger_index'));
+            }
+          },
+          requestTx: function(hash, callback){
+            if (hash === tx_hash) {
+              callback(null, {
+                "Account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                "Amount": "1000000",
+                "Destination": "rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM",
+                "Fee": "12",
+                "Flags": 2147483648,
+                "LastLedgerSequence": 6486752,
+                "Sequence": 261,
+                "SigningPubKey": "02FA03AED689EF4D9EFA21CA40F7CD8C84D5386AAE2924ED65688841336D366BB6",
+                "TransactionType": "Payment",
+                "TxnSignature": "3045022100C008524654B3C595B2140DB1A9EA79888030B2A26850E0D80E396DDBE95C9B14022016A3EF1E4300CC16D5A0EDFCE895AC6609D41B0C62919E69CC0E7A5E76E68AE9",
+                "hash": "1B724D76A5B800B3AB380A92D0EFCD542F033D73A872A67B9EF11B77C58AD38B",
+                "inLedger": 6486744,
+                "ledger_index": 6486744
+              });
+            }
+          },
+          _getServer: function() {
+            return {
+              _lastLedgerClose: Date.now()
+            };
+          },
+          once: function(){},
+          on: function(){},
+          connect: function(){},
+          removeListener: function(){}
+        },
+        dbinterface: {
+          getTransaction: function(opts, callback) {
+            callback();
+          }
+        }
+      };
+
+      var req = {
+        params: {
+          account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          identifier: tx_hash
+        }
+      };
+
+      var res = {
+        json: function(status_code, json_response) {}
+      };
+
+      var callback = function(err, res){
+        expect(err).not.to.exist;
+        expect(res.date).to.exist;
+        expect(res.date).to.equal(new Date(containing_ledger.close_time_human + "Z").valueOf()); 
+        done();
       };
 
       transactions.getTransactionHelper($, req, res, callback);
 
-      server_lib.CONNECTION_TIMEOUT = normal_CONNECTION_TIMEOUT;
+    });
+
+    it('should call the callback with the transaction in JSON format (Payment)', function(){
+
+      var tx_hash = '1B724D76A5B800B3AB380A92D0EFCD542F033D73A872A67B9EF11B77C58AD38B';
+
+      var containing_ledger = {
+        "accepted": true,
+        "account_hash": "25D7F5E99981336F685FAC95DDB2CC181AC449215CF874E330315090C9309677",
+        "close_time": 452725380,
+        "close_time_human": "2014-May-06 21:03:00",
+        "close_time_resolution": 10,
+        "closed": true,
+        "hash": "427CE04FA2756F9F38B0A875EFA90191189D13BCE73B4A89E0A14DA63D50871F",
+        "ledger_hash": "427CE04FA2756F9F38B0A875EFA90191189D13BCE73B4A89E0A14DA63D50871F",
+        "ledger_index": "6486744",
+        "parent_hash": "C32ED042C7605D31AA9163A5BAB291DEFE8A85CD35ADFA24B2B16E323BA49D04",
+        "seqNum": "6486744",
+        "totalCoins": "99999992265525078",
+        "total_coins": "99999992265525078",
+        "transaction_hash": "1D575B7E22FD7C75B3ECA4AF3CB437A0D8557F31624073169FA75B8AF8D9C61B"
+      };
+
+      var $ = {
+        remote: {
+          requestLedger: function(ledger_index, callback) {
+            if (ledger_index === 6486744) {
+              callback(null, {
+                "ledger": containing_ledger
+              });
+            } else {
+              callback(new Error('Wrong ledger_index'));
+            }
+          },
+          requestTx: function(hash, callback){
+            if (hash === tx_hash) {
+              callback(null, {
+                "Account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                "Amount": "1000000",
+                "Destination": "rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM",
+                "Fee": "12",
+                "Flags": 2147483648,
+                "LastLedgerSequence": 6486752,
+                "Sequence": 261,
+                "SigningPubKey": "02FA03AED689EF4D9EFA21CA40F7CD8C84D5386AAE2924ED65688841336D366BB6",
+                "TransactionType": "Payment",
+                "TxnSignature": "3045022100C008524654B3C595B2140DB1A9EA79888030B2A26850E0D80E396DDBE95C9B14022016A3EF1E4300CC16D5A0EDFCE895AC6609D41B0C62919E69CC0E7A5E76E68AE9",
+                "hash": "1B724D76A5B800B3AB380A92D0EFCD542F033D73A872A67B9EF11B77C58AD38B",
+                "inLedger": 6486744,
+                "ledger_index": 6486744
+              });
+            }
+          },
+          _getServer: function() {
+            return {
+              _lastLedgerClose: Date.now()
+            };
+          },
+          once: function(){},
+          on: function(){},
+          connect: function(){},
+          removeListener: function(){}
+        },
+        dbinterface: {
+          getTransaction: function(opts, callback) {
+            callback();
+          }
+        }
+      };
+
+      var req = {
+        params: {
+          account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          identifier: tx_hash
+        }
+      };
+
+      var res = {
+        json: function(status_code, json_response) {}
+      };
+
+      var callback = function(err, res){
+        expect(err).not.to.exist;
+
+        expect(res).to.contain.keys(['TransactionType', 'Flags', 'Account', 'Sequence', 'TxnSignature', 'Destination']);
+      };
+
+      transactions.getTransactionHelper($, req, res, callback);
 
     });
 
-    // it('should query the remote to attach the date to the transaction', function(){
+    // it('should handle OfferCreate transactions', function(){
 
     // });
 
-    // it('should call the callback with the transaction in JSON format', function(){
+    // it('should handle OfferCancel transactions', function(){
+
+    // });
+
+    // it('should handle TrustSet transactions', function(){
+
+    // });
+
+    // it('should handle AccountSet transactions', function(){
+
+    // });
+
+    // it('should handle RegularKeySet transactions', function(){
 
     // });
 
