@@ -234,13 +234,13 @@ function getTransactionHelper($, req, res, callback) {
     }
 
     // Get ledger containing the transaction to determine date
-    $.remote.requestLedger(transaction.ledger_index, function(err, res) {
+    $.remote.requestLedger(transaction.ledger_index, function(err, ledger_res) {
       if (err) {
         return res.json(404, { success: false, message: 'Transaction ledger not found' });
       }
 
-      if (typeof res.ledger.close_time === 'number') {
-        transaction.date = ripple.utils.time.fromRipple(res.ledger.close_time);
+      if (typeof ledger_res.ledger.close_time === 'number') {
+        transaction.date = ripple.utils.time.fromRipple(ledger_res.ledger.close_time);
       }
 
       async_callback(null, transaction);
