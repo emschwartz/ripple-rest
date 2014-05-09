@@ -1316,7 +1316,7 @@ describe('api/transactions', function(){
           expect(params.account).to.equal('test account');
           expect(params.ledger_index_min).to.equal(-1);
           expect(params.ledger_index_max).to.equal(5000000);
-          expect(params.descending).to.be.false;
+          expect(params.earliest_first).to.be.true;
           done();
         }
       };
@@ -1451,7 +1451,10 @@ describe('api/transactions', function(){
             },
             meta: { TransactionResult: 'tesSUCCESS' },
             validated: true
-          }, {
+          }, 
+
+          // The following transactions should not be included in the results
+          {
             tx: {
               Account: 'test account',
               TransactionType: 'TrustSet',
@@ -1469,6 +1472,15 @@ describe('api/transactions', function(){
             },
             meta: { TransactionResult: 'tecSOMETHING_BAD' },
             validated: true
+          }, {
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 15
+            },
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: false
           }]
         });
       };
@@ -1509,33 +1521,872 @@ describe('api/transactions', function(){
 
     });
 
-    // it('should sort the transactions based on ledger index, or date if necessary', function(){
+    it('should merge the local and remote transactions and filter them based on the given opts (exclude_failed = false)', function(done){
 
-    // });
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, [{
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 2',
+            ledger_index: 5,
+            meta: { TransactionResult: 'tecPATH_DRY' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCancel',
+            hash: 'transaction hash 7',
+            ledger_index: 21,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 8',
+            ledger_index: 22,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }]);
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        callback(null, {
+          transactions: [{
+            tx: {
+              Account: 'test account',
+              TransactionType: 'Payment',
+              hash: 'transaction hash 1',
+              ledger_index: 1
+            },
+              meta: { TransactionResult: 'tesSUCCESS' },
+              validated: true
+          }, {
+            tx: {
+              Account: 'other account',
+              Destination: 'test account',
+              TransactionType: 'Payment',
+              hash: 'transaction hash 3',
+              ledger_index: 10
+            },
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 15
+            },
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            tx: {
+              Account: 'test account',
+              TransactionType: 'TrustSet',
+              hash: 'transaction hash 5',
+              ledger_index: 15
+            },
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 6',
+              ledger_index: 20
+            },
+            meta: { TransactionResult: 'tecSOMETHING_BAD' },
+            validated: true
+          }, {
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 15
+            },
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: false
+          }]
+        });
+      };
 
-    // it('should reverse the sorting order if earliest_first is set', function(){
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 25,
+        binary: false,
+        earliest_first: false,
+        types: [ 'payment', 'offercreate' ],
+        exclude_failed: false
+      }, {
+        json: function(status_code, json_response) {
 
-    // });
+        }
+      }, function(err, resulting_transactions){
+        expect(err).not.to.exist;
 
-    // it('should merge the transactions with any transactions carried over from a previous recursive call', function(){
+        function createFindFunction(tx_number) {
+          return function(txs){
+            return !!_.find(txs, function(tx){
+              return tx.hash.indexOf(tx_number) !== -1;
+            });
+          }
+        }
 
-    // });
+        expect(resulting_transactions).to.have.length(6);
+        expect(resulting_transactions).to.satisfy(createFindFunction(1));
+        expect(resulting_transactions).to.satisfy(createFindFunction(3));
+        expect(resulting_transactions).to.satisfy(createFindFunction(4));
+        expect(resulting_transactions).to.satisfy(createFindFunction(2));
+        expect(resulting_transactions).to.satisfy(createFindFunction(6));
+        expect(resulting_transactions).to.satisfy(createFindFunction(8));
 
-    // it('should truncate the results if they exceed the opts.max', function(){
+        done();
+      });
 
-    // });
+    });
 
-    // it('should remove the first transactions based on the specified offset', function(){
+    it('should sort the transactions based on ledger index and hash for transactions in the same ledger', function(done){
 
-    // });
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, [{
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 1',
+            ledger_index: 5,
+            meta: { TransactionResult: 'tecPATH_DRY' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 3',
+            ledger_index: 22,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 5',
+            ledger_index: 24,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }]);
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        callback(null, {
+          transactions: [{
+            tx: {
+              Account: 'test account',
+              TransactionType: 'Payment',
+              hash: 'transaction hash 0',
+              ledger_index: 1
+            },
+              meta: { TransactionResult: 'tesSUCCESS' },
+              validated: true
+          }, {
+            tx: {
+              Account: 'other account',
+              Destination: 'test account',
+              TransactionType: 'Payment',
+              hash: 'transaction hash 2',
+              ledger_index: 10
+            },
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 22
+            },
+            meta: { TransactionResult: 'tecSOMETHING_BAD' },
+            validated: true
+          }]
+        });
+      };
 
-    // it('should call the callback with the transactions if no opts.min is specified', function(){
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 25,
+        binary: false,
+        earliest_first: false,
+        types: [ 'payment', 'offercreate' ],
+        exclude_failed: false
+      }, {
+        json: function(status_code, json_response) {
 
-    // });
+        }
+      }, function(err, resulting_transactions){
+        expect(err).not.to.exist;
 
-    // it('should call the callback with the transactions if opts.marker is undefined (meaning rippled had no more transactions to return)', function(){
+        function createFindFunction(tx_number) {
+          return function(txs){
+            return !!_.find(txs, function(tx){
+              return tx.hash.indexOf(tx_number) !== -1;
+            });
+          }
+        }
 
-    // });
+        expect(resulting_transactions[0].hash).to.contain(5);
+        expect(resulting_transactions[1].hash).to.contain(4);
+        expect(resulting_transactions[2].hash).to.contain(3);
+        expect(resulting_transactions[3].hash).to.contain(2);
+        expect(resulting_transactions[4].hash).to.contain(1);
+        expect(resulting_transactions[5].hash).to.contain(0);
+
+        done();
+      });
+
+    });
+
+    it('should reverse the sorting order if earliest_first is set', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, [{
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 1',
+            ledger_index: 5,
+            meta: { TransactionResult: 'tecPATH_DRY' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 3',
+            ledger_index: 22,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 5',
+            ledger_index: 24,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }]);
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        callback(null, {
+          transactions: [{
+            tx: {
+              Account: 'test account',
+              TransactionType: 'Payment',
+              hash: 'transaction hash 0',
+              ledger_index: 1
+            },
+              meta: { TransactionResult: 'tesSUCCESS' },
+              validated: true
+          }, {
+            tx: {
+              Account: 'other account',
+              Destination: 'test account',
+              TransactionType: 'Payment',
+              hash: 'transaction hash 2',
+              ledger_index: 10
+            },
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 22
+            },
+            meta: { TransactionResult: 'tecSOMETHING_BAD' },
+            validated: true
+          }]
+        });
+      };
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 25,
+        binary: false,
+        earliest_first: true,
+        types: [ 'payment', 'offercreate' ],
+        exclude_failed: false
+      }, {
+        json: function(status_code, json_response) {
+
+        }
+      }, function(err, resulting_transactions){
+        expect(err).not.to.exist;
+
+        function createFindFunction(tx_number) {
+          return function(txs){
+            return !!_.find(txs, function(tx){
+              return tx.hash.indexOf(tx_number) !== -1;
+            });
+          }
+        }
+
+        expect(resulting_transactions[0].hash).to.contain(0);
+        expect(resulting_transactions[1].hash).to.contain(1);
+        expect(resulting_transactions[2].hash).to.contain(2);
+        expect(resulting_transactions[3].hash).to.contain(3);
+        expect(resulting_transactions[4].hash).to.contain(4);
+        expect(resulting_transactions[5].hash).to.contain(5);
+
+        done();
+      });
+
+    });
+
+    it('should merge the transactions with any transactions carried over from a previous recursive call', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, [{
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 3',
+            ledger_index: 22,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 5',
+            ledger_index: 24,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }]);
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        callback(null, {
+          transactions: [{
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 22
+            },
+            meta: { TransactionResult: 'tecSOMETHING_BAD' },
+            validated: true
+          }]
+        });
+      };
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 25,
+        binary: false,
+        earliest_first: true,
+        types: [ 'payment', 'offercreate' ],
+        exclude_failed: false,
+        previous_transactions: [{
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 0',
+            ledger_index: 1,
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 1',
+            ledger_index: 5,
+            meta: { TransactionResult: 'tecPATH_DRY' }
+          }, {
+            Account: 'other account',
+            Destination: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 2',
+            ledger_index: 10,
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }]
+      }, {
+        json: function(status_code, json_response) {
+
+        }
+      }, function(err, resulting_transactions){
+        expect(err).not.to.exist;
+
+        function createFindFunction(tx_number) {
+          return function(txs){
+            return !!_.find(txs, function(tx){
+              return tx.hash.indexOf(tx_number) !== -1;
+            });
+          }
+        }
+
+        expect(resulting_transactions[0].hash).to.contain(0);
+        expect(resulting_transactions[1].hash).to.contain(1);
+        expect(resulting_transactions[2].hash).to.contain(2);
+        expect(resulting_transactions[3].hash).to.contain(3);
+        expect(resulting_transactions[4].hash).to.contain(4);
+        expect(resulting_transactions[5].hash).to.contain(5);
+
+        done();
+      });
+
+    });
+
+    it('should truncate the results if they exceed the opts.max', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, [{
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 3',
+            ledger_index: 22,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 5',
+            ledger_index: 24,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }]);
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        callback(null, {
+          transactions: [{
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 22
+            },
+            meta: { TransactionResult: 'tecSOMETHING_BAD' },
+            validated: true
+          }]
+        });
+      };
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 25,
+        binary: false,
+        earliest_first: true,
+        types: [ 'payment', 'offercreate' ],
+        exclude_failed: false,
+        max: 5,
+        previous_transactions: [{
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 0',
+            ledger_index: 1,
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 1',
+            ledger_index: 5,
+            meta: { TransactionResult: 'tecPATH_DRY' }
+          }, {
+            Account: 'other account',
+            Destination: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 2',
+            ledger_index: 10,
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }]
+      }, {
+        json: function(status_code, json_response) {
+
+        }
+      }, function(err, resulting_transactions){
+        expect(err).not.to.exist;
+
+        function createFindFunction(tx_number) {
+          return function(txs){
+            return !!_.find(txs, function(tx){
+              return tx.hash.indexOf(tx_number) !== -1;
+            });
+          }
+        }
+
+        expect(resulting_transactions).to.have.length(5);
+
+        expect(resulting_transactions[0].hash).to.contain(0);
+        expect(resulting_transactions[1].hash).to.contain(1);
+        expect(resulting_transactions[2].hash).to.contain(2);
+        expect(resulting_transactions[3].hash).to.contain(3);
+        expect(resulting_transactions[4].hash).to.contain(4);
+
+        done();
+      });
+
+    });
+
+    it('should remove the first transactions based on the specified offset', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, [{
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 3',
+            ledger_index: 22,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 5',
+            ledger_index: 24,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }]);
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        callback(null, {
+          transactions: [{
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 22
+            },
+            meta: { TransactionResult: 'tecSOMETHING_BAD' },
+            validated: true
+          }]
+        });
+      };
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 25,
+        binary: false,
+        earliest_first: true,
+        types: [ 'payment', 'offercreate' ],
+        exclude_failed: false,
+        offset: 2,
+        previous_transactions: [{
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 0',
+            ledger_index: 1,
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 1',
+            ledger_index: 5,
+            meta: { TransactionResult: 'tecPATH_DRY' }
+          }, {
+            Account: 'other account',
+            Destination: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 2',
+            ledger_index: 10,
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }]
+      }, {
+        json: function(status_code, json_response) {
+
+        }
+      }, function(err, resulting_transactions){
+        expect(err).not.to.exist;
+
+        function createFindFunction(tx_number) {
+          return function(txs){
+            return !!_.find(txs, function(tx){
+              return tx.hash.indexOf(tx_number) !== -1;
+            });
+          }
+        }
+
+        expect(resulting_transactions).to.have.length(4);
+
+        expect(resulting_transactions[0].hash).to.contain(2);
+        expect(resulting_transactions[1].hash).to.contain(3);
+        expect(resulting_transactions[2].hash).to.contain(4);
+        expect(resulting_transactions[3].hash).to.contain(5);
+
+        done();
+      });
+
+    });
+
+    it('should call the callback with the transactions if no opts.min is specified', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, [{
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 3',
+            ledger_index: 22,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 5',
+            ledger_index: 24,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }]);
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        callback(null, {
+          transactions: [{
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 22
+            },
+            meta: { TransactionResult: 'tecSOMETHING_BAD' },
+            validated: true
+          }]
+        });
+      };
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 25,
+        binary: false,
+        earliest_first: true,
+        types: [ 'payment', 'offercreate' ],
+        exclude_failed: false,
+        marker: {
+          ledger: 'some ledger',
+          seq: 'some seq'
+        },
+        previous_transactions: [{
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 0',
+            ledger_index: 1,
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 1',
+            ledger_index: 5,
+            meta: { TransactionResult: 'tecPATH_DRY' }
+          }, {
+            Account: 'other account',
+            Destination: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 2',
+            ledger_index: 10,
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }]
+      }, {
+        json: function(status_code, json_response) {
+
+        }
+      }, function(err, resulting_transactions){
+        expect(err).not.to.exist;
+        expect(resulting_transactions).to.exist;
+        expect(resulting_transactions).to.have.length(6);
+
+        done();
+      });
+
+    });
+
+    it('should call the callback with the transactions if opts.marker is undefined (meaning rippled had no more transactions to return)', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, [{
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 3',
+            ledger_index: 22,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }, {
+            Account: 'test account',
+            TransactionType: 'OfferCreate',
+            hash: 'transaction hash 5',
+            ledger_index: 24,
+            meta: { TransactionResult: 'tejSecretUnknown' }
+          }]);
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        callback(null, {
+          transactions: [{
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 22
+            },
+            meta: { TransactionResult: 'tecSOMETHING_BAD' },
+            validated: true
+          }]
+        });
+      };
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 25,
+        binary: false,
+        earliest_first: true,
+        types: [ 'payment', 'offercreate' ],
+        exclude_failed: false,
+        min: 10,
+        previous_transactions: [{
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 0',
+            ledger_index: 1,
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            Account: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 1',
+            ledger_index: 5,
+            meta: { TransactionResult: 'tecPATH_DRY' }
+          }, {
+            Account: 'other account',
+            Destination: 'test account',
+            TransactionType: 'Payment',
+            hash: 'transaction hash 2',
+            ledger_index: 10,
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }]
+      }, {
+        json: function(status_code, json_response) {
+
+        }
+      }, function(err, resulting_transactions){
+        expect(err).not.to.exist;
+        expect(resulting_transactions).to.exist;
+        expect(resulting_transactions).to.have.length(6);
+
+        done();
+      });
+
+    });
 
     // it('should call itself recursively until the opts.min requirement is filled', function(){
 
