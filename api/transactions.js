@@ -270,8 +270,10 @@ function getTransactionHelper($, req, res, callback) {
  *  @param {RippleAddress} opts.account
  *  @param {Number} [-1] opts.ledger_index_min
  *  @param {Number} [-1] opts.ledger_index_max
- *  @param {Boolean} [true] opts.descending
+ *  @param {Boolean} [false] opts.earliest_first
  *  @param {Boolean} [false] opts.binary
+ *  @param {Boolean} [true] opts.exclude_failed
+ *  @param {Array of Strings} opts.types Possible values are "payment", "offercreate", "offercancel", "trustset", "accountset"
  *  @param {opaque value} opts.marker
  *  @param {Express.js Response} res
  *  @param {Function} callback
@@ -298,6 +300,8 @@ function getAccountTransactions($, opts, res, callback, previous_transactions) {
     }
   }
 
+  opts.descending = !opts.earliest_first;
+
   function ensureConnected(async_callback) {
     server_lib.ensureConnected($.remote, function(err, connected){
       if (connected) {
@@ -310,7 +314,7 @@ function getAccountTransactions($, opts, res, callback, previous_transactions) {
     });
   };
 
-  function queryTransactions(connected, async_callback) {
+  function queryTransactions(async_callback) {
     getLocalAndRemoteTransactions($, opts, async_callback);
   };
 
@@ -371,7 +375,7 @@ function getAccountTransactions($, opts, res, callback, previous_transactions) {
     } else {
 
       setImmediate(function() {
-        getAccountTransactions(remote, dbinterface, opts, callback, transactions);
+        getAccountTransactions($, opts, res, callback, transactions);
       });
 
     }
@@ -388,6 +392,7 @@ function getAccountTransactions($, opts, res, callback, previous_transactions) {
  *  @param {Number} [-1] opts.ledger_index_max
  *  @param {Boolean} [true] opts.descending
  *  @param {Boolean} [false] opts.binary
+ *  @param {Boolean} [true] opts.exclude_failed
  *  @param {opaque value} opts.marker
  *  @param {Function} callback
  *
@@ -398,7 +403,7 @@ function getAccountTransactions($, opts, res, callback, previous_transactions) {
 function getLocalAndRemoteTransactions($, opts, callback) {
 
   function queryRippled(callback) {
-    getAccountTx(remote, opts, function(err, results) {
+    getAccountTx($.remote, opts, function(err, results) {
       if (err) {
         callback(err);
       } else {
@@ -415,7 +420,7 @@ function getLocalAndRemoteTransactions($, opts, callback) {
     if (opts.exclude_failed) {
       callback(null, [ ]);
     } else {
-      dbinterface.getFailedTransactions(opts, callback);
+      $.dbinterface.getFailedTransactions(opts, callback);
     }
   };
 
