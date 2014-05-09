@@ -1,3 +1,4 @@
+var _            = require('lodash');
 var expect       = require('chai').expect;
 var transactions = require('../api/transactions');
 var server_lib   = require('../lib/server-lib');
@@ -1272,7 +1273,273 @@ describe('api/transactions', function(){
 
   describe('.getAccountTransactions()', function(){
 
-    
+    it('should report an error if there is no connection to rippled', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          //console.log('dbinterface.getTransaction');
+          callback();
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now() - (20 * 1000 + 1);
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {}, {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(500);
+          expect(json_response.message).to.include('Cannot connect to rippled');
+          done();
+        }
+      }, function(err, resulting_transactions){
+
+      });
+       
+    });
+      
+    it('should query the database for failed transactions matching the given opts', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          expect(params.account).to.equal('test account');
+          expect(params.ledger_index_min).to.equal(-1);
+          expect(params.ledger_index_max).to.equal(5000000);
+          expect(params.descending).to.be.false;
+          done();
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 5000000,
+        binary: false,
+        earliest_first: true,
+        types: [ 'payment', 'offercreate', 'trustset' ]
+      }, {
+        json: function(status_code, json_response) {
+
+        }
+      }, function(err, resulting_transactions){
+
+      });
+
+    });
+
+    it('should query the Remote for transactions', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback();
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        expect(params.account).to.equal('test account');
+        expect(params.ledger_index_min).to.equal(-1);
+        expect(params.ledger_index_max).to.equal(5000000);
+        expect(params.forward).to.be.true;
+        done();
+      };
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 5000000,
+        binary: false,
+        earliest_first: true,
+        types: [ 'payment', 'offercreate', 'trustset' ]
+      }, {
+        json: function(status_code, json_response) {
+
+        }
+      }, function(err, resulting_transactions){
+
+      });
+
+    });
+
+    it('should merge the local and remote transactions and filter them based on the given opts (exclude_failed = true)', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, [{
+
+          }]);
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        callback(null, {
+          transactions: [{
+            tx: {
+              Account: 'test account',
+              TransactionType: 'Payment',
+              hash: 'transaction hash 1',
+              ledger_index: 1
+            },
+              meta: { TransactionResult: 'tesSUCCESS' },
+              validated: true
+          }, {
+            tx: {
+              Account: 'other account',
+              Destination: 'test account',
+              TransactionType: 'Payment',
+              hash: 'transaction hash 3',
+              ledger_index: 10
+            },
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 4',
+              ledger_index: 15
+            },
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            tx: {
+              Account: 'test account',
+              TransactionType: 'TrustSet',
+              hash: 'transaction hash 5',
+              ledger_index: 15
+            },
+            meta: { TransactionResult: 'tesSUCCESS' },
+            validated: true
+          }, {
+            tx: {
+              Account: 'test account',
+              TransactionType: 'OfferCreate',
+              hash: 'transaction hash 6',
+              ledger_index: 20
+            },
+            meta: { TransactionResult: 'tecSOMETHING_BAD' },
+            validated: true
+          }]
+        });
+      };
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: -1,
+        ledger_index_max: 25,
+        binary: false,
+        earliest_first: true,
+        types: [ 'payment', 'offercreate' ],
+        exclude_failed: true
+      }, {
+        json: function(status_code, json_response) {
+
+        }
+      }, function(err, resulting_transactions){
+        expect(err).not.to.exist;
+
+        function createFindFunction(tx_number) {
+          return function(txs){
+            return !!_.find(txs, function(tx){
+              return tx.hash.indexOf(tx_number) !== -1;
+            });
+          }
+        }
+
+        expect(resulting_transactions).to.have.length(3);
+        expect(resulting_transactions).to.satisfy(createFindFunction(1));
+        expect(resulting_transactions).to.satisfy(createFindFunction(3));
+        expect(resulting_transactions).to.satisfy(createFindFunction(4));
+
+        done();
+      });
+
+    });
+
+    // it('should sort the transactions based on ledger index, or date if necessary', function(){
+
+    // });
+
+    // it('should reverse the sorting order if earliest_first is set', function(){
+
+    // });
+
+    // it('should merge the transactions with any transactions carried over from a previous recursive call', function(){
+
+    // });
+
+    // it('should truncate the results if they exceed the opts.max', function(){
+
+    // });
+
+    // it('should remove the first transactions based on the specified offset', function(){
+
+    // });
+
+    // it('should call the callback with the transactions if no opts.min is specified', function(){
+
+    // });
+
+    // it('should call the callback with the transactions if opts.marker is undefined (meaning rippled had no more transactions to return)', function(){
+
+    // });
+
+    // it('should call itself recursively until the opts.min requirement is filled', function(){
+
+    // });
 
   });
 
