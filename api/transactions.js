@@ -275,6 +275,7 @@ function getTransactionHelper($, req, res, callback) {
  *  @param {Boolean} [true] opts.exclude_failed
  *  @param {Array of Strings} opts.types Possible values are "payment", "offercreate", "offercancel", "trustset", "accountset"
  *  @param {opaque value} opts.marker
+ *  @param {Array of Transactions} opts.previous_transactions Included automatically when this function is called recursively
  *  @param {Express.js Response} res
  *  @param {Function} callback
  *
@@ -282,7 +283,7 @@ function getTransactionHelper($, req, res, callback) {
  *  @param {Error} error
  *  @param {Array of transactions in JSON format} transactions
  */
-function getAccountTransactions($, opts, res, callback, previous_transactions) {
+function getAccountTransactions($, opts, res, callback) {
   if (!opts.max) {
     opts.max = module.exports.DEFAULT_RESULTS_PER_PAGE;
   }
@@ -299,8 +300,6 @@ function getAccountTransactions($, opts, res, callback, previous_transactions) {
       opts.limit = opts.max;
     }
   }
-
-  opts.descending = !opts.earliest_first;
 
   function ensureConnected(async_callback) {
     server_lib.ensureConnected($.remote, function(err, connected){
@@ -325,7 +324,7 @@ function getAccountTransactions($, opts, res, callback, previous_transactions) {
 
   function sortTransactions(transactions, async_callback) {
     transactions.sort(function(first, second) {
-      return compareTransactions(first, second, opts.descending);
+      return compareTransactions(first, second, opts.earliest_first);
     });
 
     async_callback(null, transactions);
@@ -334,8 +333,8 @@ function getAccountTransactions($, opts, res, callback, previous_transactions) {
   function mergeAndTruncateResults(transactions, async_callback) {
     // Combine transactions with previous_transactions from previous
     // recursive call of this function
-    if (previous_transactions && previous_transactions.length > 0) {
-      transactions = previous_transactions.concat(transactions);
+    if (opts.previous_transactions && opts.previous_transactions.length > 0) {
+      transactions = opts.previous_transactions.concat(transactions);
     }
 
     // Handle offset
@@ -390,7 +389,7 @@ function getAccountTransactions($, opts, res, callback, previous_transactions) {
  *  @param {RippleAddress} opts.account
  *  @param {Number} [-1] opts.ledger_index_min
  *  @param {Number} [-1] opts.ledger_index_max
- *  @param {Boolean} [true] opts.descending
+ *  @param {Boolean} [false] opts.earliest_first
  *  @param {Boolean} [false] opts.binary
  *  @param {Boolean} [true] opts.exclude_failed
  *  @param {opaque value} opts.marker
@@ -426,7 +425,7 @@ function getLocalAndRemoteTransactions($, opts, callback) {
 
   var transaction_sources = [ 
     queryRippled, 
-    queryDB 
+    queryDB
   ];
 
   async.parallel(transaction_sources, function(err, results) {
@@ -497,39 +496,54 @@ function transactionFilter(transactions, opts) {
 };
 
 /**
- *  Order two transactions based on their ledger_index and date
+ *  Order two transactions based on their ledger_index.
+ *  If two transactions took place in the same ledger, sort
+ *  them based on a lexicographical comparison of their hashes
+ *  to ensure the ordering is deterministic.
  *
  *  @param {transaction in JSON format} first
  *  @param {transaction in JSON format} second
- *  @param {Boolean} [false] descending
+ *  @param {Boolean} [false] earliest_first
+ *  @returns {Number} comparison Returns -1 or 1
  */
-function compareTransactions(first, second, descending) {
+function compareTransactions(first, second, earliest_first) {
   var first_index = first.ledger || first.ledger_index;
   var second_index = second.ledger || second.ledger_index;
+
   var first_less_than_second = true;
 
   if (first_index === second_index) {
-    if (first.date <= second.date) {
+
+    if (first.hash <= second.hash) {
       first_less_than_second = true;
     } else {
       first_less_than_second = false;
     }
+
   } else if (first_index < second_index) {
     first_less_than_second = true;
   } else {
     first_less_than_second = false;
   }
 
-  // If the results are meant to be descending, swap this value
-  if (descending) {
-    first_less_than_second = !first_less_than_second;
+  if (earliest_first) {
+
+    if (first_less_than_second) {
+      return -1;
+    } else {
+      return 1;
+    }
+
+  } else  {
+
+    if (first_less_than_second) {
+      return 1;
+    } else {
+      return -1;
+    }
+
   }
 
-  if (first_less_than_second) {
-    return -1;
-  } else {
-    return 1;
-  }
 };
 
 /**
@@ -539,7 +553,7 @@ function compareTransactions(first, second, descending) {
  *  @param {RippleAddress} opts.account
  *  @param {Number} [-1] opts.ledger_index_min
  *  @param {Number} [-1] opts.ledger_index_max
- *  @param {Boolean} [true] opts.descending
+ *  @param {Boolean} [false] opts.earliest_first
  *  @param {Boolean} [false] opts.binary
  *  @param {opaque value} opts.marker
  *  @param {Function} callback
@@ -555,7 +569,7 @@ function getAccountTx(remote, opts, callback) {
     ledger_index_min: opts.ledger_index_min || opts.ledger_index || -1,
     ledger_index_max: opts.ledger_index_max || opts.ledger_index || -1,
     limit: opts.limit || DEFAULT_RESULTS_PER_PAGE,
-    forward: (opts.hasOwnProperty('descending') ? !opts.descending : true),
+    forward: opts.earliest_first,
     marker: opts.marker
   };
 
