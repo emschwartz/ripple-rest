@@ -4,7 +4,6 @@ var Settings      = require('./settings');
 var Transactions  = require('./transactions');
 var TrustLines    = require('./trustlines');
 var Notifications = require('./notifications');
-var Submission    = require('./submission');
 var Payments      = require('./payments');
 
 module.exports = (function() {
@@ -33,12 +32,9 @@ module.exports = (function() {
       add: TrustLines.add
     },
 
-    submission: {
-      submitPayment: Submission.submitPayment
-    },
-
     payments: {
-      getPayment: Payments.getPayment,
+      submit: Payments.submit,
+      get: Payments.getPayment,
       getBulkPayments: Payments.getBulkPayments,
       getPathFind: Payments.getPathFind
     },

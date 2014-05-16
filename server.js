@@ -160,7 +160,7 @@ app.get('/v1', function(req, res) {
       submit_payment:         url_base + '/payments',
       payment_paths:          url_base + '/accounts/{address}/payments/paths/{destination_account}/{destination_amount as value+currency or value+currency+issuer}',
       account_payments:       url_base + '/accounts/{address}/payments/{hash,client_resource_id}{?direction,exclude_failed}',
-      account_notifications:  url_base + '/accounts/{address}/notifications{/hash,client_resource_id}{?types,exclude_failed}',
+      account_notifications:  url_base + '/accounts/{address}/notifications/{hash,client_resource_id}',
       account_balances:       url_base + '/accounts/{address}/balances',
       account_settings:       url_base + '/accounts/{address}/settings',
       account_trustlines:     url_base + '/accounts/{address}/trustlines',
@@ -177,8 +177,8 @@ app.get('/v1/server', api.info.serverStatus);
 app.get('/v1/server/connected', api.info.isConnected);
 
 /* Payments */
-app.post('/v1/payments', api.submission.submitPayment);
-app.post('/v1/accounts/:account/payments', api.submission.submitPayment);
+app.post('/v1/payments', api.payments.submit);
+app.post('/v1/accounts/:account/payments', api.payments.submit);
 
 app.get('/v1/accounts/:account/payments', api.payments.getBulkPayments);
 app.get('/v1/accounts/:account/payments/:identifier', api.payments.getPayment);
