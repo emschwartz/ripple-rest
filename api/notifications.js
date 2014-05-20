@@ -34,7 +34,11 @@ function getNotification($, req, res, next) {
 
     // Add url_base to each url in notification
     var url_base = req.protocol + '://' + req.host + ({80: ':80', 443: ':443' }[$.config.get('PORT')] || '');
-    // TODO add url_base
+    Object.keys(response.notification).forEach(function(key){
+      if (/url/.test(key)) {
+        response.notification[key] = url_base + response.notification[key];
+      }
+    });
 
     // Move client_resource_id to response body instead of inside the Notification
     var client_resource_id = response.notification.client_resource_id;
@@ -91,7 +95,7 @@ function getNotificationHelper($, req, res, callback) {
   // Note that getTransaction also handles parameter validation and
   // checks the status of the connection to rippled
   function getTransaction(async_callback) {
-    transactions.getTransaction($, req, res, async_callback);
+    transactions.getTransactionHelper($, req, res, async_callback);
   };
 
   // Check that the rippled has the ledger containing the
@@ -131,7 +135,7 @@ function getNotificationHelper($, req, res, callback) {
   };
 
   // Parse the Notification object from the notification_details
-  function parseNotification(notification_details, async_callback) {
+  function parseNotificationDetails(notification_details, async_callback) {
     var notification = parseNotification(notification_details);
     async_callback(null, notification);
   };
@@ -140,7 +144,7 @@ function getNotificationHelper($, req, res, callback) {
     getTransaction,
     checkLedger,
     prepareNotificationDetails,
-    parseNotification
+    parseNotificationDetails
   ];
 
   async.waterfall(steps, callback);
@@ -195,7 +199,6 @@ function attachPreviousAndNextTransactionIdentifiers($, res, notification_detail
   // going forward and backwards to get a range of transactions
   // that will definitely include the next and previous transactions
   function getNextAndPreviousTransactions(num_transactions_in_ledger, async_callback) {
-
     async.concat([false, true], function(earliest_first, async_concat_callback){
       var params = {
         account: notification_details.account,
@@ -206,7 +209,7 @@ function attachPreviousAndNextTransactionIdentifiers($, res, notification_detail
 
       // In rippled -1 corresponds to the first or last ledger
       // in its database, depending on whether it is the min or max value
-      if (opts.earliest_first) {
+      if (params.earliest_first) {
         params.ledger_index_max = notification_details.transaction.ledger_index;
         params.ledger_index_min = -1;
       } else {
@@ -224,12 +227,12 @@ function attachPreviousAndNextTransactionIdentifiers($, res, notification_detail
   function sortTransactions(all_possible_transactions, async_callback) {
     all_possible_transactions.push(notification_details.transaction);
 
-    var possibilities = _.uniq(all_possible_transactions, function(tx) {
+    var transactions = _.uniq(all_possible_transactions, function(tx) {
       return tx.hash;
     });
 
     // Sort transactions in ascending order (earliest_first) by ledger_index
-    possibilities.sort(function(a, b) {
+    transactions.sort(function(a, b) {
       if (a.ledger_index === b.ledger_index) {
         return a.date <= b.date ? -1 : 1;
       } else {
@@ -237,7 +240,7 @@ function attachPreviousAndNextTransactionIdentifiers($, res, notification_detail
       }
     });
 
-    async_callback(null, possibilities);
+    async_callback(null, transactions);
   };
 
   // Find the base_transaction amongst the results. Because the
@@ -245,8 +248,9 @@ function attachPreviousAndNextTransactionIdentifiers($, res, notification_detail
   // will be the ones on either side of the base transaction
   function findPreviousAndNextTransactions(transactions, async_callback) {
 
+
     // Find the index in the array of the base_transaction
-    var base_transaction_index = _.findIndex(possibilities, function(possibility) {
+    var base_transaction_index = _.findIndex(transactions, function(possibility) {
       if (possibility.hash === notification_details.transaction.hash) {
         return true;
       } else if (possibility.client_resource_id === notification_details.transaction.client_resource_id ||
@@ -260,18 +264,19 @@ function attachPreviousAndNextTransactionIdentifiers($, res, notification_detail
     // The previous transaction is the one with an index in
     // the array of base_transaction_index - 1
     if (base_transaction_index > 0) {
-      var previous_transaction = possibilities[base_transaction_index - 1];
+      var previous_transaction = transactions[base_transaction_index - 1];
       notification_details.previous_transaction_identifier = (previous_transaction.from_local_db ? previous_transaction.client_resource_id : previous_transaction.hash);
       notification_details.previous_hash = previous_transaction.hash;
     }
 
     // The next transaction is the one with an index in
     // the array of base_transaction_index + 1
-    if (base_transaction_index + 1 < possibilities.length) {
-      var next_transaction = possibilities[base_transaction_index + 1];
+    if (base_transaction_index + 1 < transactions.length) {
+      var next_transaction = transactions[base_transaction_index + 1];
       notification_details.next_transaction_identifier = (next_transaction.from_local_db ? next_transaction.client_resource_id : next_transaction.hash);
       notification_details.next_hash = next_transaction.hash;
     }
+
 
     async_callback(null, notification_details);
   };
@@ -309,7 +314,7 @@ function parseNotification(notification_details){
     account: account,
     type: transaction.TransactionType.toLowerCase(),
     direction: '', // set below
-    state: (notification.result === 'tesSUCCESS' ? 'validated' : 'failed'),
+    state: (transaction.meta ? (transaction.meta.result === 'tesSUCCESS' ? 'validated' : 'failed') : ''),
     result: (transaction.meta ? transaction.meta.TransactionResult : ''),
     ledger: '' + transaction.ledger_index,
     hash: transaction.hash,
