@@ -284,6 +284,7 @@ function getTransactionHelper($, req, res, callback) {
  *  @param {Array of transactions in JSON format} transactions
  */
 function getAccountTransactions($, opts, res, callback) {
+
   if (!opts.max) {
     opts.max = module.exports.DEFAULT_RESULTS_PER_PAGE;
   }
@@ -373,8 +374,9 @@ function getAccountTransactions($, opts, res, callback) {
 
     } else {
 
+      opts.previous_transactions = transactions;
       setImmediate(function() {
-        getAccountTransactions($, opts, res, callback, transactions);
+        getAccountTransactions($, opts, res, callback);
       });
 
     }
