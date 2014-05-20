@@ -189,7 +189,7 @@ function getPayment($, req, res, next) {
 
   // If the transaction was not in the outgoing_transactions db, get it from rippled
   function getTransaction(callback) {
-    transactionsLib.getTransaction(remote, dbinterface, opts, callback);
+    transactions.getTransactionHelper($, opts, callback);
   };
 
   function checkIsPayment(transaction, callback) {
