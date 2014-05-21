@@ -273,6 +273,8 @@ function getTransactionHelper($, req, res, callback) {
  *  @param {Boolean} [false] opts.earliest_first
  *  @param {Boolean} [false] opts.binary
  *  @param {Boolean} [true] opts.exclude_failed
+ *  @param {Number} [DEFAULT_RESULTS_PER_PAGE] opts.min
+ *  @param {Number} [DEFAULT_RESULTS_PER_PAGE] opts.max
  *  @param {Array of Strings} opts.types Possible values are "payment", "offercreate", "offercancel", "trustset", "accountset"
  *  @param {opaque value} opts.marker
  *  @param {Array of Transactions} opts.previous_transactions Included automatically when this function is called recursively
@@ -285,21 +287,16 @@ function getTransactionHelper($, req, res, callback) {
  */
 function getAccountTransactions($, opts, res, callback) {
 
-  if (!opts.max) {
-    opts.max = module.exports.DEFAULT_RESULTS_PER_PAGE;
-  }
-
   if (!opts.min) {
     opts.min = module.exports.DEFAULT_RESULTS_PER_PAGE;
   }
 
-  // Limit will be set if this function is called recursively
+  if (!opts.max) {
+    opts.max = Math.max(opts.min, module.exports.DEFAULT_RESULTS_PER_PAGE);
+  }
+
   if (!opts.limit) {
-    if (opts.types && opts.types.length < module.exports.NUM_TRANSACTION_TYPES) {
-      opts.limit = 2 * Math.max(opts.max, module.exports.DEFAULT_RESULTS_PER_PAGE);
-    } else {
-      opts.limit = opts.max;
-    }
+    opts.limit = Math.max(opts.max, module.exports.DEFAULT_RESULTS_PER_PAGE);
   }
 
   function ensureConnected(async_callback) {
