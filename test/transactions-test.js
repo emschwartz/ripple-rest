@@ -1,8 +1,12 @@
 var _            = require('lodash');
-var expect       = require('chai').expect;
+var chai         = require('chai');
+var sinon        = require('sinon');
+var sinonchai    = require('sinon-chai');
+var expect       = chai.expect;
 var transactions = require('../api/transactions');
 var server_lib   = require('../lib/server-lib');
 var ripple       = require('ripple-lib');
+chai.use(sinonchai);
 
 server_lib.CONNECTION_TIMEOUT = 1;
 
@@ -2388,9 +2392,209 @@ describe('api/transactions', function(){
 
     });
 
-    // it('should call itself recursively until the opts.min requirement is filled', function(){
+    it('should call itself recursively until the opts.min requirement is filled', function(done){
 
-    // });
+      var MIN_TRANSACTIONS = 25;
+
+      var normal_DEFAULT_RESULTS_PER_PAGE = transactions.DEFAULT_RESULTS_PER_PAGE;
+      transactions.DEFAULT_RESULTS_PER_PAGE = 5;
+
+      var transaction_list = [];
+      for (var t = 0; t < 40; t++) {
+        var transaction = {
+          tx:{
+            Account: 'test account',
+            hash: 'transaction hash ' + t,
+            ledger_index: 2 * t
+          },
+          meta: { TransactionResult: 'tesSUCCESS' },
+          validated: true
+        };
+
+        // Make 1/3 of them OfferCreates, the rest Payments
+        if (t % 3 === 0) {
+          transaction.tx.TransactionType = 'OfferCreate';
+        } else {
+          transaction.tx.TransactionType = 'Payment';
+        }
+
+        transaction_list.push(transaction);
+      }
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, []);
+        }
+      };
+
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        var matching_transactions = [];
+        for (var t = 0; t < transaction_list.length; t++) {
+          var transaction = transaction_list[t];
+          if (transaction.tx.ledger_index >= params.ledger_index_min && 
+            transaction.tx.ledger_index <= params.ledger_index_max &&
+            (!params.marker || transaction.tx.ledger_index >= params.marker.ledger)) {
+            matching_transactions.push(transaction);
+          }
+          if (matching_transactions.length >= params.limit) {
+            break;
+          }
+        }
+        var response = { 
+          transactions: matching_transactions 
+        };
+
+        if (matching_transactions.length === params.limit) {
+          response.marker = {
+            ledger: matching_transactions[matching_transactions.length - 1].tx.ledger_index,
+            sequence: 1
+          };
+        }
+
+        callback(null, response);
+      };
+
+      var spy = sinon.spy(remote, 'requestAccountTx');
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: 0,
+        ledger_index_max: 80,
+        types: [ 'payment' ],
+        earliest_first: true,
+        min: MIN_TRANSACTIONS
+      }, {
+        json: function(status_code, json_response) {
+          expect(false, 'This should not be called');
+        }
+      }, function(err, resulting_transactions) {
+        expect(err).not.to.exist;
+
+        expect(resulting_transactions).to.have.length(MIN_TRANSACTIONS);
+        expect(spy.callCount).to.equal(2);
+        done();
+
+      });
+
+      transactions.DEFAULT_RESULTS_PER_PAGE = normal_DEFAULT_RESULTS_PER_PAGE;
+
+    });
+
+    it('should call itself recursively until the rippled does not return a marker (meaning there are no more transactions for the account)', function(done){
+
+      var MIN_TRANSACTIONS = 25;
+
+      var normal_DEFAULT_RESULTS_PER_PAGE = transactions.DEFAULT_RESULTS_PER_PAGE;
+      transactions.DEFAULT_RESULTS_PER_PAGE = 5;
+
+      var transaction_list = [];
+      for (var t = 0; t < 20; t++) {
+        var transaction = {
+          tx:{
+            Account: 'test account',
+            hash: 'transaction hash ' + t,
+            ledger_index: 2 * t
+          },
+          meta: { TransactionResult: 'tesSUCCESS' },
+          validated: true
+        };
+
+        // Make 1/3 of them OfferCreates, the rest Payments
+        if (t % 3 === 0) {
+          transaction.tx.TransactionType = 'OfferCreate';
+        } else {
+          transaction.tx.TransactionType = 'Payment';
+        }
+
+        transaction_list.push(transaction);
+      }
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          callback(null, []);
+        }
+      };
+
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+      remote.requestAccountTx = function(params, callback) {
+        var matching_transactions = [];
+        for (var t = 0; t < transaction_list.length; t++) {
+          var transaction = transaction_list[t];
+          if (transaction.tx.ledger_index >= params.ledger_index_min && 
+            transaction.tx.ledger_index <= params.ledger_index_max &&
+            (!params.marker || transaction.tx.ledger_index >= params.marker.ledger)) {
+            matching_transactions.push(transaction);
+          }
+          if (matching_transactions.length >= params.limit) {
+            break;
+          }
+        }
+        var response = { 
+          transactions: matching_transactions 
+        };
+
+        if (matching_transactions.length === params.limit) {
+          response.marker = {
+            ledger: matching_transactions[matching_transactions.length - 1].tx.ledger_index,
+            sequence: 1
+          };
+        }
+
+        callback(null, response);
+      };
+
+      var spy = sinon.spy(remote, 'requestAccountTx');
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'test account',
+        ledger_index_min: 0,
+        ledger_index_max: 40,
+        types: [ 'payment' ],
+        earliest_first: true,
+        min: MIN_TRANSACTIONS
+      }, {
+        json: function(status_code, json_response) {
+          expect(false, 'This should not be called');
+        }
+      }, function(err, resulting_transactions) {
+        expect(err).not.to.exist;
+
+        expect(resulting_transactions).to.have.length(20 - Math.ceil(20 / 3));
+        expect(spy.callCount).to.equal(1);
+        done();
+
+      });
+
+      transactions.DEFAULT_RESULTS_PER_PAGE = normal_DEFAULT_RESULTS_PER_PAGE;
+
+    });
 
   });
 
