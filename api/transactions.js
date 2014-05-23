@@ -165,6 +165,10 @@ function getTransactionHelper($, req, res, callback) {
   };
 
   function validateOptions(async_callback) {
+    if (opts.account && !validator.isValid(opts.account, 'RippleAddress')) {
+      return res.json(400, { success: false, message: 'Invalid parameter: account. Must be a valid Ripple Address' });
+    }
+
     if (!opts.identifier) {
       res.json(400, { success: false, message: 'Missing parameter: identifier' });
     } else if (validator.isValid(opts.identifier, 'Hash256')) {
