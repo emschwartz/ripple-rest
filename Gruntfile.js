@@ -1,5 +1,5 @@
 var fs        = require('fs');
-var config    = require('./config/config-loader');
+var config    = require('./lib/config-loader');
 var dbconnect; 
 
 module.exports = function(grunt) {

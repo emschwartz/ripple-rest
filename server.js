@@ -27,7 +27,7 @@ console.set({
 
 
 /* Connect to db */
-var config = require('./config/config-loader');
+var config = require('./lib/config-loader');
 var DatabaseInterface = require('./lib/db-interface');
 var dbinterface = new DatabaseInterface(config.get('DATABASE_URL'));
 
