@@ -6,6 +6,7 @@ var validator = require('../lib/schema-validator');
 var server_lib = require('../lib/server-lib');
 
 module.exports = {
+  get: getNotification,
   getNotification: getNotification,
   getNextNotification: getNextNotification
 };
@@ -112,7 +113,7 @@ function getNotificationHelper($, req, res, callback) {
       if (remote_has_ledger) {
         async_callback(null, base_transaction);
       } else {
-        res.json(500, { succes: false, message: 'Cannot Get Notification. ' +
+        res.json(500, { success: false, message: 'Cannot Get Notification. ' +
           'This transaction is not in the ripple\'s complete ledger set. ' +
           'Because there is a gap in the rippled\'s historical database it is ' +
           'not possible to determine the transactions that precede this one' });
