@@ -8,8 +8,6 @@ var server_lib   = require('../lib/server-lib');
 var ripple       = require('ripple-lib');
 chai.use(sinonchai);
 
-server_lib.CONNECTION_TIMEOUT = 1;
-
 describe('api/transactions', function(){
 
   describe('.submit()', function(){
@@ -20,7 +18,7 @@ describe('api/transactions', function(){
         remote: {
           _getServer: function() {
             return {
-              _lastLedgerClose: Date.now() - 20001 // Considered disconnected
+              _lastLedgerClose: Date.now() - (server_lib.CONNECTION_TIMEOUT + 1) // Considered disconnected
             };
           },
           once: function(){},
@@ -183,7 +181,7 @@ describe('api/transactions', function(){
         remote: {
           _getServer: function() {
             return {
-              _lastLedgerClose: Date.now() - 1 // Considered connected
+              _lastLedgerClose: Date.now() // Considered connected
             };
           },
           once: function(){},
@@ -252,6 +250,7 @@ describe('api/transactions', function(){
       remote._getServer = function() {
         return Server;
       };
+      remote.connect = function(){};
        
       var test_transaction = new ripple.Transaction();
        
