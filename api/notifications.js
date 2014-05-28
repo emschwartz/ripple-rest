@@ -38,7 +38,7 @@ function getNotification($, req, res, next) {
     // Add url_base to each url in notification
     var url_base = req.protocol + '://' + req.host + ($.config && $.config.get('PORT') ? {80: ':80', 443: ':443' }[$.config.get('PORT')] : '');
     Object.keys(response.notification).forEach(function(key){
-      if (/url/.test(key)) {
+      if (/url/.test(key) && response.notification[key]) {
         response.notification[key] = url_base + response.notification[key];
       }
     });
@@ -133,6 +133,11 @@ function getNotificationHelper($, req, res, callback) {
       identifier:      opts.identifier,
       transaction:     base_transaction
     };
+
+    // Move client_resource_id to notification_details from transaction
+    if (base_transaction.client_resource_id) {
+      notification_details.client_resource_id = base_transaction.client_resource_id;
+    }
 
     attachPreviousAndNextTransactionIdentifiers($, res, notification_details, async_callback);
   };
@@ -265,8 +270,6 @@ function attachPreviousAndNextTransactionIdentifiers($, res, notification_detail
         return false;
       }
     });
-
-    console.log('base_transaction_index', base_transaction_index);
 
     // The previous transaction is the one with an index in
     // the array of base_transaction_index - 1

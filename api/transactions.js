@@ -200,6 +200,12 @@ function getTransactionHelper($, req, res, callback) {
         return async_callback(err);
       }
 
+      // Store the client_resource_id in the greater function's scope
+      // so that it can be used further down the async waterfall
+      if (entry && entry.client_resource_id) {
+        opts.client_resource_id = entry.client_resource_id;
+      }
+
       if (entry && entry.transaction) {
         async_callback(null, entry.transaction);
       } else if (entry) {
