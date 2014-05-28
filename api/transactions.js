@@ -276,7 +276,7 @@ function getTransactionHelper($, req, res, callback) {
  *  @param {Number} [-1] opts.ledger_index_max
  *  @param {Boolean} [false] opts.earliest_first
  *  @param {Boolean} [false] opts.binary
- *  @param {Boolean} [true] opts.exclude_failed
+ *  @param {Boolean} [false] opts.exclude_failed
  *  @param {Number} [DEFAULT_RESULTS_PER_PAGE] opts.min
  *  @param {Number} [DEFAULT_RESULTS_PER_PAGE] opts.max
  *  @param {Array of Strings} opts.types Possible values are "payment", "offercreate", "offercancel", "trustset", "accountset"
@@ -394,7 +394,7 @@ function getAccountTransactions($, opts, res, callback) {
  *  @param {Number} [-1] opts.ledger_index_max
  *  @param {Boolean} [false] opts.earliest_first
  *  @param {Boolean} [false] opts.binary
- *  @param {Boolean} [true] opts.exclude_failed
+ *  @param {Boolean} [false] opts.exclude_failed
  *  @param {opaque value} opts.marker
  *  @param {Function} callback
  *
@@ -431,12 +431,12 @@ function getLocalAndRemoteTransactions($, opts, callback) {
     queryDB
   ];
 
-  async.parallel(transaction_sources, function(err, results) {
+  async.parallel(transaction_sources, function(err, source_results) {
     if (err) {
       return callback(err);
     }
 
-    var results = results[0].concat(results[1]);
+    var results = source_results[0].concat(source_results[1]);
     var transactions = _.uniq(results, function(tx) {
       return tx.hash;
     });
@@ -449,7 +449,7 @@ function getLocalAndRemoteTransactions($, opts, callback) {
  *  Filter transactions based on the given set of options.
  *  
  *  @param {Array of transactions in JSON format} transactions
- *  @param {Boolean} [true] opts.exclude_failed
+ *  @param {Boolean} [false] opts.exclude_failed
  *  @param {Array of Strings} opts.types Possible values are "payment", "offercreate", "offercancel", "trustset", "accountset"
  *  @param {RippleAddress} opts.source_account
  *  @param {RippleAddress} opts.destination_account

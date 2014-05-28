@@ -13,14 +13,16 @@ module.exports = {
 
 /**
  *  Get a notification corresponding to the specified
- *  account and transaction identifier.
+ *  account and transaction identifier. Uses the res.json
+ *  method to send errors or a notification back to the client.
  *
- *  See getNotificationHelper for parameters.
- *
- *  Sends json response to client with fields
- *  "success", "notification" (containing the json notification), 
- *  and "client_resource_id" if one was found in 
- *  the local database for the transaction
+ *  @param {Remote} $.remote
+ *  @param {/lib/db-interface} $.dbinterface
+ *  @param {/lib/config-loader} $.config
+ *  @param {RippleAddress} req.params.account
+ *  @param {Hex-encoded String|ResourceId} req.params.identifier
+ *  @param {Express.js Response} res
+ *  @param {Express.js Next} next
  */
 function getNotification($, req, res, next) {
   getNotificationHelper($, req, res, function(err, notification) {
@@ -34,7 +36,7 @@ function getNotification($, req, res, next) {
     };
 
     // Add url_base to each url in notification
-    var url_base = req.protocol + '://' + req.host + ({80: ':80', 443: ':443' }[$.config.get('PORT')] || '');
+    var url_base = req.protocol + '://' + req.host + ($.config && $.config.get('PORT') ? {80: ':80', 443: ':443' }[$.config.get('PORT')] : '');
     Object.keys(response.notification).forEach(function(key){
       if (/url/.test(key)) {
         response.notification[key] = url_base + response.notification[key];
@@ -48,7 +50,7 @@ function getNotification($, req, res, next) {
       response.client_resource_id = client_resource_id;
     }
 
-    res.json(response);
+    res.json(200, response);
   });
 };
 
@@ -185,7 +187,8 @@ function attachPreviousAndNextTransactionIdentifiers($, res, notification_detail
       account: notification_details.account,
       ledger_index_min: notification_details.transaction.ledger_index,
       ledger_index_max: notification_details.transaction.ledger_index,
-      exclude_failed: false
+      exclude_failed: false,
+      limit: 200 // arbitrary, just checking number of transactions in ledger
     };
 
     transactions.getAccountTransactions($, params, res, async_callback);
@@ -205,17 +208,18 @@ function attachPreviousAndNextTransactionIdentifiers($, res, notification_detail
         account: notification_details.account,
         max: num_transactions_in_ledger + 1,
         min: num_transactions_in_ledger + 1,
+        limit: num_transactions_in_ledger + 1,
         earliest_first: earliest_first
       };
 
       // In rippled -1 corresponds to the first or last ledger
       // in its database, depending on whether it is the min or max value
       if (params.earliest_first) {
-        params.ledger_index_max = notification_details.transaction.ledger_index;
-        params.ledger_index_min = -1;
-      } else {
         params.ledger_index_max = -1;
         params.ledger_index_min = notification_details.transaction.ledger_index;
+      } else {
+        params.ledger_index_max = notification_details.transaction.ledger_index;
+        params.ledger_index_min = -1;
       }
 
       transactions.getAccountTransactions($, params, res, async_concat_callback);
@@ -249,18 +253,20 @@ function attachPreviousAndNextTransactionIdentifiers($, res, notification_detail
   // will be the ones on either side of the base transaction
   function findPreviousAndNextTransactions(transactions, async_callback) {
 
-
     // Find the index in the array of the base_transaction
     var base_transaction_index = _.findIndex(transactions, function(possibility) {
       if (possibility.hash === notification_details.transaction.hash) {
         return true;
-      } else if (possibility.client_resource_id === notification_details.transaction.client_resource_id ||
-        possibility.client_resource_id === notification_details.identifier) {
+      } else if (possibility.client_resource_id &&
+        (possibility.client_resource_id === notification_details.transaction.client_resource_id ||
+        possibility.client_resource_id === notification_details.identifier)) {
         return true;
       } else {
         return false;
       }
     });
+
+    console.log('base_transaction_index', base_transaction_index);
 
     // The previous transaction is the one with an index in
     // the array of base_transaction_index - 1
