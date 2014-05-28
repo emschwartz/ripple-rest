@@ -375,48 +375,19 @@ describe('api/notifications', function(){
           requestLedger: function(ledger_index, callback) {
             callback(null, {
               "ledger": {
-                "accepted": true,
-                "account_hash": "821981700D3CA8AAD34389CA5698A54024786F4111A3F5D1E758A76C3F89194F",
                 "close_time": 453925550,
                 "close_time_human": "2014-May-20 18:25:50",
-                "close_time_resolution": 10,
-                "closed": true,
                 "hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
                 "ledger_hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
-                "ledger_index": "6735142",
-                "parent_hash": "28DD6A8E5CD4341E9F732B8D41ECB46DBBCF14CB9A5193F3782511CAC038C48A",
-                "seqNum": "6735142",
-                "totalCoins": "99999990180825196",
-                "total_coins": "99999990180825196",
-                "transaction_hash": "AE3F8F80E78BF742115AEDCBDD37E4362D24B311FB28744892D5D2C0509F9D55"
+                "ledger_index": "6735142"
               }
             });
           },
           requestServerInfo: function(callback) {
             callback(null, {
               "info": {
-                "build_version": "0.25.1",
-                "complete_ledgers": "6735143-6777223",
-                "hostid": "WAGE",
-                "io_latency_ms": 1,
-                "last_close": {
-                  "converge_time_s": 2.004,
-                  "proposers": 5
-                },
-                "load_factor": 1,
-                "peers": 33,
-                "pubkey_node": "n9LJ5eCNjeUXQpNXHCcLv9PQ8LMFYy4W8R1BdVNcpjc1oDwe6XZF",
-                "server_state": "full",
-                "validated_ledger": {
-                  "age": 9,
-                  "base_fee_xrp": 0.00001,
-                  "hash": "E22187A7F79FE6CA67FE3705A5A3E046D2C74D160A3D7FF74A8821B55C67B765",
-                  "reserve_base_xrp": 20,
-                  "reserve_inc_xrp": 5,
-                  "seq": 6777223
-                },
-                "validation_quorum": 3
-              }
+                "complete_ledgers": "6735143-6777223"
+                }
             })
           }
         },
@@ -527,48 +498,19 @@ describe('api/notifications', function(){
           requestLedger: function(ledger_index, callback) {
             callback(null, {
               "ledger": {
-                "accepted": true,
-                "account_hash": "821981700D3CA8AAD34389CA5698A54024786F4111A3F5D1E758A76C3F89194F",
                 "close_time": 453925550,
                 "close_time_human": "2014-May-20 18:25:50",
-                "close_time_resolution": 10,
-                "closed": true,
                 "hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
                 "ledger_hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
-                "ledger_index": "6735142",
-                "parent_hash": "28DD6A8E5CD4341E9F732B8D41ECB46DBBCF14CB9A5193F3782511CAC038C48A",
-                "seqNum": "6735142",
-                "totalCoins": "99999990180825196",
-                "total_coins": "99999990180825196",
-                "transaction_hash": "AE3F8F80E78BF742115AEDCBDD37E4362D24B311FB28744892D5D2C0509F9D55"
+                "ledger_index": "6735142"
               }
             });
           },
           requestServerInfo: function(callback) {
             callback(null, {
               "info": {
-                "build_version": "0.25.1",
-                "complete_ledgers": "32570-6777223",
-                "hostid": "WAGE",
-                "io_latency_ms": 1,
-                "last_close": {
-                  "converge_time_s": 2.004,
-                  "proposers": 5
-                },
-                "load_factor": 1,
-                "peers": 33,
-                "pubkey_node": "n9LJ5eCNjeUXQpNXHCcLv9PQ8LMFYy4W8R1BdVNcpjc1oDwe6XZF",
-                "server_state": "full",
-                "validated_ledger": {
-                  "age": 9,
-                  "base_fee_xrp": 0.00001,
-                  "hash": "E22187A7F79FE6CA67FE3705A5A3E046D2C74D160A3D7FF74A8821B55C67B765",
-                  "reserve_base_xrp": 20,
-                  "reserve_inc_xrp": 5,
-                  "seq": 6777223
-                },
-                "validation_quorum": 3
-              }
+                "complete_ledgers": "32570-6777223"
+                }
             })
           },
           requestAccountTx: function(params, callback) {
@@ -1021,48 +963,19 @@ describe('api/notifications', function(){
           requestLedger: function(ledger_index, callback) {
             callback(null, {
               "ledger": {
-                "accepted": true,
-                "account_hash": "821981700D3CA8AAD34389CA5698A54024786F4111A3F5D1E758A76C3F89194F",
                 "close_time": 453925550,
                 "close_time_human": "2014-May-20 18:25:50",
-                "close_time_resolution": 10,
-                "closed": true,
                 "hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
                 "ledger_hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
-                "ledger_index": "6735142",
-                "parent_hash": "28DD6A8E5CD4341E9F732B8D41ECB46DBBCF14CB9A5193F3782511CAC038C48A",
-                "seqNum": "6735142",
-                "totalCoins": "99999990180825196",
-                "total_coins": "99999990180825196",
-                "transaction_hash": "AE3F8F80E78BF742115AEDCBDD37E4362D24B311FB28744892D5D2C0509F9D55"
+                "ledger_index": "6735142"
               }
             });
           },
           requestServerInfo: function(callback) {
             callback(null, {
               "info": {
-                "build_version": "0.25.1",
-                "complete_ledgers": "32570-6777223",
-                "hostid": "WAGE",
-                "io_latency_ms": 1,
-                "last_close": {
-                  "converge_time_s": 2.004,
-                  "proposers": 5
-                },
-                "load_factor": 1,
-                "peers": 33,
-                "pubkey_node": "n9LJ5eCNjeUXQpNXHCcLv9PQ8LMFYy4W8R1BdVNcpjc1oDwe6XZF",
-                "server_state": "full",
-                "validated_ledger": {
-                  "age": 9,
-                  "base_fee_xrp": 0.00001,
-                  "hash": "E22187A7F79FE6CA67FE3705A5A3E046D2C74D160A3D7FF74A8821B55C67B765",
-                  "reserve_base_xrp": 20,
-                  "reserve_inc_xrp": 5,
-                  "seq": 6777223
-                },
-                "validation_quorum": 3
-              }
+                "complete_ledgers": "32570-6777223"
+                }
             })
           },
           requestAccountTx: function(params, callback) {
@@ -1431,7 +1344,6 @@ describe('api/notifications', function(){
       }, {
         json: function(status_code, json_response) {
           expect(status_code).to.equal(200);
-          console.log(json_response);
           expect(json_response.notification.next_notification_url).to.equal('http://localhost:80/v1/accounts/rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r/notifications/A990DDD82F6B4F54CF1763121766C113330A35235C44B547C67EB2AF8E0D3201');
           expect(json_response.notification.previous_notification_url).to.equal('http://localhost:80/v1/accounts/rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r/notifications/AD8CD554D5E03E5558FDCE3D20A40A58088E8AD6ECA06885BAC9E1B0EDA72940');
           done();
@@ -1442,21 +1354,665 @@ describe('api/notifications', function(){
 
     });
 
-    // it('should correctly order notifications based on the accounts transaction history', function(){
+    it('should include the client_resource_id in the JSON response -- but not in the notification body -- when one is found in the database', function(done){
 
-    // });
+      var $ = {
+        remote: {
+          _getServer: function() {
+            return {
+              _lastLedgerClose: Date.now(),
+              _opts: {
+                url: ''
+              }
+            };
+          },
+          once: function(){},
+          on: function(){},
+          connect: function(){},
+          removeListener: function(){},
+          requestTx: function(hash, callback) {
+            callback(null, {
+              "Account": "rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r",
+              "Amount": "10",
+              "Destination": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+              "DestinationTag": 123,
+              "Fee": "12",
+              "Flags": 2147483648,
+              "LastLedgerSequence": 6735147,
+              "Sequence": 153,
+              "SigningPubKey": "02BE53B7ACBB0900E0BB7729C9CAC1033A0137993B17800BD1191BBD1B29D96A8C",
+              "SourceTag": 456,
+              "TransactionType": "Payment",
+              "TxnSignature": "3044022031B9FF8E213A59B7A51B105989D4D669634DF2B0853E4E041D2C2936EC4FA86802204149ADFD408DC75A4528B98B65CA0682A9BDF8CEB3DC842A5474C998FB62020F",
+              "hash": "130BA857E78D5A8BB27EACB911904A877C0A4D1EB66967AD6C86DE7DD3EC14BC",
+              "inLedger": 6735142,
+              "ledger_index": 6735142,
+              "meta": {
+                "AffectedNodes": [
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "Account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                        "Balance": "241338604",
+                        "Flags": 1048576,
+                        "OwnerCount": 6,
+                        "RegularKey": "rHq2wyUtLkAad3vURUk33q9gozd97skhSf",
+                        "Sequence": 270
+                      },
+                      "LedgerEntryType": "AccountRoot",
+                      "LedgerIndex": "58D2E252AE8842B950C960B6BC7A3319762F1C66E3C35985A3B160479EFEDF23",
+                      "PreviousFields": {
+                        "Balance": "241338594"
+                      },
+                      "PreviousTxnID": "AD8CD554D5E03E5558FDCE3D20A40A58088E8AD6ECA06885BAC9E1B0EDA72940",
+                      "PreviousTxnLgrSeq": 6735099
+                    }
+                  },
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "Account": "rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r",
+                        "Balance": "79521203",
+                        "Flags": 0,
+                        "OwnerCount": 9,
+                        "Sequence": 154
+                      },
+                      "LedgerEntryType": "AccountRoot",
+                      "LedgerIndex": "FA39C6EC43AA870B5E9ED592EF683CC1134DB60746C54A997B6BEAE366EF04C9",
+                      "PreviousFields": {
+                        "Balance": "79521225",
+                        "Sequence": 153
+                      },
+                      "PreviousTxnID": "AD8CD554D5E03E5558FDCE3D20A40A58088E8AD6ECA06885BAC9E1B0EDA72940",
+                      "PreviousTxnLgrSeq": 6735099
+                    }
+                  }
+                ],
+                "TransactionIndex": 1,
+                "TransactionResult": "tesSUCCESS"
+              },
+              "validated": true
+            });
+          },
+          requestLedger: function(ledger_index, callback) {
+            callback(null, {
+              "ledger": {
+                "close_time": 453925550,
+                "close_time_human": "2014-May-20 18:25:50",
+                "hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
+                "ledger_hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
+                "ledger_index": "6735142"
+              }
+            });
+          },
+          requestServerInfo: function(callback) {
+            callback(null, {
+              "info": {
+                "complete_ledgers": "32570-6777223"
+                }
+            })
+          },
+          requestAccountTx: function(params, callback) {
+            callback(null, {
+              transactions: []
+            });
+          }
+        },
+        dbinterface: {
+          getTransaction: function(params, callback) {
+            callback(null, {
+              client_resource_id: 'testid'
+            });
+          },
+          getFailedTransactions: function(params, callback) {
+            callback(null, []);
+          }
+        },
+        config: {
+          get: function(key) {
+            if (key === 'PORT') {
+              return 80;
+            }
+          }
+        }
+      };
 
-    // it('should include the client_resource_id in the JSON response -- but not in the notification body -- when one is found in the database', function(){
+      notifications.get($, {
+        params: {
+          account: 'rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r',
+          identifier: '130BA857E78D5A8BB27EACB911904A877C0A4D1EB66967AD6C86DE7DD3EC14BC'
+        },
+        protocol: 'http',
+        host: 'localhost'
+      }, {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(200);
+          expect(json_response.notification.client_resource_id).not.to.exist;
+          expect(json_response.client_resource_id).to.equal('testid');
+          done();
+        }
+      }, function(err){
+        expect(err).not.to.exist;
+      });
 
-    // });
+    });
 
-    // it('should correctly identify the direction of transactions as incoming, outgoing, or passthrough', function(){
+    it('should correctly identify outgoing transactions', function(done){
 
-    // });
+      var $ = {
+        remote: {
+          _getServer: function() {
+            return {
+              _lastLedgerClose: Date.now(),
+              _opts: {
+                url: ''
+              }
+            };
+          },
+          once: function(){},
+          on: function(){},
+          connect: function(){},
+          removeListener: function(){},
+          requestTx: function(hash, callback) {
+            callback(null, {
+              "Account": "rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r",
+              "Amount": "10",
+              "Destination": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+              "DestinationTag": 123,
+              "Fee": "12",
+              "Flags": 2147483648,
+              "LastLedgerSequence": 6735147,
+              "Sequence": 153,
+              "SigningPubKey": "02BE53B7ACBB0900E0BB7729C9CAC1033A0137993B17800BD1191BBD1B29D96A8C",
+              "SourceTag": 456,
+              "TransactionType": "Payment",
+              "TxnSignature": "3044022031B9FF8E213A59B7A51B105989D4D669634DF2B0853E4E041D2C2936EC4FA86802204149ADFD408DC75A4528B98B65CA0682A9BDF8CEB3DC842A5474C998FB62020F",
+              "hash": "130BA857E78D5A8BB27EACB911904A877C0A4D1EB66967AD6C86DE7DD3EC14BC",
+              "inLedger": 6735142,
+              "ledger_index": 6735142,
+              "meta": {
+                "AffectedNodes": [
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "Account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                        "Balance": "241338604",
+                        "Flags": 1048576,
+                        "OwnerCount": 6,
+                        "RegularKey": "rHq2wyUtLkAad3vURUk33q9gozd97skhSf",
+                        "Sequence": 270
+                      },
+                      "LedgerEntryType": "AccountRoot",
+                      "LedgerIndex": "58D2E252AE8842B950C960B6BC7A3319762F1C66E3C35985A3B160479EFEDF23",
+                      "PreviousFields": {
+                        "Balance": "241338594"
+                      },
+                      "PreviousTxnID": "AD8CD554D5E03E5558FDCE3D20A40A58088E8AD6ECA06885BAC9E1B0EDA72940",
+                      "PreviousTxnLgrSeq": 6735099
+                    }
+                  },
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "Account": "rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r",
+                        "Balance": "79521203",
+                        "Flags": 0,
+                        "OwnerCount": 9,
+                        "Sequence": 154
+                      },
+                      "LedgerEntryType": "AccountRoot",
+                      "LedgerIndex": "FA39C6EC43AA870B5E9ED592EF683CC1134DB60746C54A997B6BEAE366EF04C9",
+                      "PreviousFields": {
+                        "Balance": "79521225",
+                        "Sequence": 153
+                      },
+                      "PreviousTxnID": "AD8CD554D5E03E5558FDCE3D20A40A58088E8AD6ECA06885BAC9E1B0EDA72940",
+                      "PreviousTxnLgrSeq": 6735099
+                    }
+                  }
+                ],
+                "TransactionIndex": 1,
+                "TransactionResult": "tesSUCCESS"
+              },
+              "validated": true
+            });
+          },
+          requestLedger: function(ledger_index, callback) {
+            callback(null, {
+              "ledger": {
+                "close_time": 453925550,
+                "close_time_human": "2014-May-20 18:25:50",
+                "hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
+                "ledger_hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
+                "ledger_index": "6735142"
+              }
+            });
+          },
+          requestServerInfo: function(callback) {
+            callback(null, {
+              "info": {
+                "complete_ledgers": "32570-6777223"
+                }
+            })
+          },
+          requestAccountTx: function(params, callback) {
+            callback(null, {
+              transactions: []
+            });
+          }
+        },
+        dbinterface: {
+          getTransaction: function(params, callback) {
+            callback();
+          },
+          getFailedTransactions: function(params, callback) {
+            callback(null, []);
+          }
+        }
+      };
 
-    // it('should return full URLs for the appropriate fields', function(){
+      notifications.get($, {
+        params: {
+          account: 'rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r',
+          identifier: '130BA857E78D5A8BB27EACB911904A877C0A4D1EB66967AD6C86DE7DD3EC14BC'
+        },
+        protocol: 'http',
+        host: 'localhost'
+      }, {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(200);
+          expect(json_response.notification.direction).to.equal('outgoing');
+          done();
+        }
+      }, function(err){
+        expect(err).not.to.exist;
+      });
 
-    // });
+    });
+
+    it('should correctly identify incoming transactions', function(done){
+
+      var $ = {
+        remote: {
+          _getServer: function() {
+            return {
+              _lastLedgerClose: Date.now(),
+              _opts: {
+                url: ''
+              }
+            };
+          },
+          once: function(){},
+          on: function(){},
+          connect: function(){},
+          removeListener: function(){},
+          requestTx: function(hash, callback) {
+            callback(null, {
+              "Account": "rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r",
+              "Amount": "10",
+              "Destination": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+              "DestinationTag": 123,
+              "Fee": "12",
+              "Flags": 2147483648,
+              "LastLedgerSequence": 6735147,
+              "Sequence": 153,
+              "SigningPubKey": "02BE53B7ACBB0900E0BB7729C9CAC1033A0137993B17800BD1191BBD1B29D96A8C",
+              "SourceTag": 456,
+              "TransactionType": "Payment",
+              "TxnSignature": "3044022031B9FF8E213A59B7A51B105989D4D669634DF2B0853E4E041D2C2936EC4FA86802204149ADFD408DC75A4528B98B65CA0682A9BDF8CEB3DC842A5474C998FB62020F",
+              "hash": "130BA857E78D5A8BB27EACB911904A877C0A4D1EB66967AD6C86DE7DD3EC14BC",
+              "inLedger": 6735142,
+              "ledger_index": 6735142,
+              "meta": {
+                "AffectedNodes": [
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "Account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                        "Balance": "241338604",
+                        "Flags": 1048576,
+                        "OwnerCount": 6,
+                        "RegularKey": "rHq2wyUtLkAad3vURUk33q9gozd97skhSf",
+                        "Sequence": 270
+                      },
+                      "LedgerEntryType": "AccountRoot",
+                      "LedgerIndex": "58D2E252AE8842B950C960B6BC7A3319762F1C66E3C35985A3B160479EFEDF23",
+                      "PreviousFields": {
+                        "Balance": "241338594"
+                      },
+                      "PreviousTxnID": "AD8CD554D5E03E5558FDCE3D20A40A58088E8AD6ECA06885BAC9E1B0EDA72940",
+                      "PreviousTxnLgrSeq": 6735099
+                    }
+                  },
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "Account": "rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r",
+                        "Balance": "79521203",
+                        "Flags": 0,
+                        "OwnerCount": 9,
+                        "Sequence": 154
+                      },
+                      "LedgerEntryType": "AccountRoot",
+                      "LedgerIndex": "FA39C6EC43AA870B5E9ED592EF683CC1134DB60746C54A997B6BEAE366EF04C9",
+                      "PreviousFields": {
+                        "Balance": "79521225",
+                        "Sequence": 153
+                      },
+                      "PreviousTxnID": "AD8CD554D5E03E5558FDCE3D20A40A58088E8AD6ECA06885BAC9E1B0EDA72940",
+                      "PreviousTxnLgrSeq": 6735099
+                    }
+                  }
+                ],
+                "TransactionIndex": 1,
+                "TransactionResult": "tesSUCCESS"
+              },
+              "validated": true
+            });
+          },
+          requestLedger: function(ledger_index, callback) {
+            callback(null, {
+              "ledger": {
+                "close_time": 453925550,
+                "close_time_human": "2014-May-20 18:25:50",
+                "hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
+                "ledger_hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
+                "ledger_index": "6735142"
+              }
+            });
+          },
+          requestServerInfo: function(callback) {
+            callback(null, {
+              "info": {
+                "complete_ledgers": "32570-6777223"
+                }
+            })
+          },
+          requestAccountTx: function(params, callback) {
+            callback(null, {
+              transactions: []
+            });
+          }
+        },
+        dbinterface: {
+          getTransaction: function(params, callback) {
+            callback();
+          },
+          getFailedTransactions: function(params, callback) {
+            callback(null, []);
+          }
+        }
+      };
+
+      notifications.get($, {
+        params: {
+          account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          identifier: '130BA857E78D5A8BB27EACB911904A877C0A4D1EB66967AD6C86DE7DD3EC14BC'
+        },
+        protocol: 'http',
+        host: 'localhost'
+      }, {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(200);
+          expect(json_response.notification.direction).to.equal('incoming');
+          done();
+        }
+      }, function(err){
+        expect(err).not.to.exist;
+      });
+
+    });
+
+    it('should correctly identify passthrough transactions', function(done){
+
+      var $ = {
+        remote: {
+          _getServer: function() {
+            return {
+              _lastLedgerClose: Date.now(),
+              _opts: {
+                url: ''
+              }
+            };
+          },
+          once: function(){},
+          on: function(){},
+          connect: function(){},
+          removeListener: function(){},
+          requestTx: function(hash, callback) {
+            callback(null, {
+              "Account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+              "Amount": {
+                "currency": "BER",
+                "issuer": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                "value": "0.1"
+              },
+              "Destination": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+              "Fee": "12",
+              "Flags": 0,
+              "SendMax": {
+                "currency": "FAK",
+                "issuer": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                "value": "0.0202"
+              },
+              "Sequence": 237,
+              "SigningPubKey": "025B32A54BFA33FB781581F49B235C0E2820C929FF41E677ADA5D3E53CFBA46332",
+              "TransactionType": "Payment",
+              "TxnSignature": "304402206787F455EC1FD2BD4AD2AC60A893201E266F9FAD20E05DBC9073C50B5750B7B3022047620D984B9D92F61D8BD6818CCE563B422E2416C4FFEEF5B5295999C17D1892",
+              "hash": "3B8FBB4AA5BECCEF324EE0C947C754F182589A2357C5354303277D4C38B3C4F9",
+              "inLedger": 6076661,
+              "ledger_index": 6076661,
+              "meta": {
+                "AffectedNodes": [
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "Account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                        "Balance": "262338867",
+                        "Flags": 0,
+                        "OwnerCount": 6,
+                        "Sequence": 238
+                      },
+                      "LedgerEntryType": "AccountRoot",
+                      "LedgerIndex": "58D2E252AE8842B950C960B6BC7A3319762F1C66E3C35985A3B160479EFEDF23",
+                      "PreviousFields": {
+                        "Balance": "262338879",
+                        "OwnerCount": 7,
+                        "Sequence": 237
+                      },
+                      "PreviousTxnID": "7238EC73723695CFCB2D99247E3C33464987DEA942CBC2DA5FC2E70EFD77FA3E",
+                      "PreviousTxnLgrSeq": 6076657
+                    }
+                  },
+                  {
+                    "DeletedNode": {
+                      "FinalFields": {
+                        "Account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                        "BookDirectory": "9F558762D78ED00690C2C8892ACEF67A78C5DB2046D4B81454071AFD498D0000",
+                        "BookNode": "0000000000000000",
+                        "Flags": 0,
+                        "OwnerNode": "0000000000000000",
+                        "PreviousTxnID": "B3D525EE750259B84AAF83CBD7F21556B7BF23EAB0886749FAC3C8A66D5D29EE",
+                        "PreviousTxnLgrSeq": 6076649,
+                        "Sequence": 235,
+                        "TakerGets": {
+                          "currency": "BER",
+                          "issuer": "rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM",
+                          "value": "0"
+                        },
+                        "TakerPays": {
+                          "currency": "FAK",
+                          "issuer": "rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM",
+                          "value": "0"
+                        }
+                      },
+                      "LedgerEntryType": "Offer",
+                      "LedgerIndex": "750B2948472A5EF2294D2514B24DAC8C9720D282CC8904AB9AC21B15C311D663",
+                      "PreviousFields": {
+                        "TakerGets": {
+                          "currency": "BER",
+                          "issuer": "rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM",
+                          "value": "0.1"
+                        },
+                        "TakerPays": {
+                          "currency": "FAK",
+                          "issuer": "rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM",
+                          "value": "0.02"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "ExchangeRate": "54071AFD498D0000",
+                        "Flags": 0,
+                        "RootIndex": "9F558762D78ED00690C2C8892ACEF67A78C5DB2046D4B81454071AFD498D0000",
+                        "TakerGetsCurrency": "0000000000000000000000004245520000000000",
+                        "TakerGetsIssuer": "D0C3786E1EF7ED5A55715427796C37F6C1953D3F",
+                        "TakerPaysCurrency": "00000000000000000000000046414B0000000000",
+                        "TakerPaysIssuer": "D0C3786E1EF7ED5A55715427796C37F6C1953D3F"
+                      },
+                      "LedgerEntryType": "DirectoryNode",
+                      "LedgerIndex": "9F558762D78ED00690C2C8892ACEF67A78C5DB2046D4B81454071AFD498D0000"
+                    }
+                  },
+                  {
+                    "DeletedNode": {
+                      "FinalFields": {
+                        "Account": "rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r",
+                        "BookDirectory": "BF1879D38D45250F7431982A7831288FFB9C82141097EBB351038D7EA4C68000",
+                        "BookNode": "0000000000000000",
+                        "Flags": 0,
+                        "OwnerNode": "0000000000000000",
+                        "PreviousTxnID": "D7642EEDBB54FA47C4DAE7FF5B66A748BE1CB21B8BA53CC29E8B1CA4F4F35B89",
+                        "PreviousTxnLgrSeq": 6076608,
+                        "Sequence": 137,
+                        "TakerGets": "100000",
+                        "TakerPays": {
+                          "currency": "FAK",
+                          "issuer": "rLpq5RcRzA8FU1yUqEPW4xfsdwon7casuM",
+                          "value": "10"
+                        }
+                      },
+                      "LedgerEntryType": "Offer",
+                      "LedgerIndex": "A0EA49A5307C09EAE09DAE03993E56D0C725C871C3408385C6BE6C14F2DAB239"
+                    }
+                  },
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "Flags": 0,
+                        "Owner": "rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r",
+                        "RootIndex": "B01C6AFE2135794EE393651652E00F9C3F5CCDFA7C2149BAAFD5A06752F111C1"
+                      },
+                      "LedgerEntryType": "DirectoryNode",
+                      "LedgerIndex": "B01C6AFE2135794EE393651652E00F9C3F5CCDFA7C2149BAAFD5A06752F111C1"
+                    }
+                  },
+                  {
+                    "DeletedNode": {
+                      "FinalFields": {
+                        "ExchangeRate": "51038D7EA4C68000",
+                        "Flags": 0,
+                        "RootIndex": "BF1879D38D45250F7431982A7831288FFB9C82141097EBB351038D7EA4C68000",
+                        "TakerGetsCurrency": "0000000000000000000000000000000000000000",
+                        "TakerGetsIssuer": "0000000000000000000000000000000000000000",
+                        "TakerPaysCurrency": "00000000000000000000000046414B0000000000",
+                        "TakerPaysIssuer": "D0C3786E1EF7ED5A55715427796C37F6C1953D3F"
+                      },
+                      "LedgerEntryType": "DirectoryNode",
+                      "LedgerIndex": "BF1879D38D45250F7431982A7831288FFB9C82141097EBB351038D7EA4C68000"
+                    }
+                  },
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "Flags": 0,
+                        "Owner": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                        "RootIndex": "F655EAF4786194E0F98C74517D2444AC6932FDAD9EBB69F06394330298A52C15"
+                      },
+                      "LedgerEntryType": "DirectoryNode",
+                      "LedgerIndex": "F655EAF4786194E0F98C74517D2444AC6932FDAD9EBB69F06394330298A52C15"
+                    }
+                  },
+                  {
+                    "ModifiedNode": {
+                      "FinalFields": {
+                        "Account": "rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r",
+                        "Balance": "130521538",
+                        "Flags": 0,
+                        "OwnerCount": 10,
+                        "Sequence": 138
+                      },
+                      "LedgerEntryType": "AccountRoot",
+                      "LedgerIndex": "FA39C6EC43AA870B5E9ED592EF683CC1134DB60746C54A997B6BEAE366EF04C9",
+                      "PreviousFields": {
+                        "OwnerCount": 11
+                      },
+                      "PreviousTxnID": "D7642EEDBB54FA47C4DAE7FF5B66A748BE1CB21B8BA53CC29E8B1CA4F4F35B89",
+                      "PreviousTxnLgrSeq": 6076608
+                    }
+                  }
+                ],
+                "TransactionIndex": 2,
+                "TransactionResult": "tesSUCCESS"
+              },
+              "validated": true
+            });
+          },
+          requestLedger: function(ledger_index, callback) {
+            callback(null, {
+              "ledger": {
+                "close_time": 453925550,
+                "close_time_human": "2014-May-20 18:25:50",
+                "hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
+                "ledger_hash": "EC3467A6313C1A645EB2AA4A10096FEC13BBC087ACEA9ED60B3BE453E265E95F",
+                "ledger_index": "6735142"
+              }
+            });
+          },
+          requestServerInfo: function(callback) {
+            callback(null, {
+              "info": {
+                "complete_ledgers": "32570-6777223"
+                }
+            })
+          },
+          requestAccountTx: function(params, callback) {
+            callback(null, {
+              transactions: []
+            });
+          }
+        },
+        dbinterface: {
+          getTransaction: function(params, callback) {
+            callback();
+          },
+          getFailedTransactions: function(params, callback) {
+            callback(null, []);
+          }
+        }
+      };
+
+      notifications.get($, {
+        params: {
+          account: 'rNw4ozCG514KEjPs5cDrqEcdsi31Jtfm5r',
+          identifier: '3B8FBB4AA5BECCEF324EE0C947C754F182589A2357C5354303277D4C38B3C4F9'
+        },
+        protocol: 'http',
+        host: 'localhost'
+      }, {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(200);
+          expect(json_response.notification.direction).to.equal('passthrough');
+          done();
+        }
+      }, function(err){
+        expect(err).not.to.exist;
+      });
+
+    });
 
     // it('should list the type as the resource, rather than transaction, type (payment, order, trustline, settings)', function(){
 
@@ -1465,5 +2021,3 @@ describe('api/notifications', function(){
   });
 
 });
-
-// make sure to test that notifications are returned in the correct order
