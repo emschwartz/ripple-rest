@@ -35,7 +35,7 @@ module.exports = (function() {
     payments: {
       submit: Payments.submit,
       get: Payments.get,
-      getBulkPayments: Payments.getBulkPayments,
+      getAccountPayments: Payments.getAccountPayments,
       getPathFind: Payments.getPathFind
     },
 

@@ -12,7 +12,7 @@ var DEFAULT_RESULTS_PER_PAGE = 10;
 module.exports = {
   submit: submitPayment,
   get: getPayment,
-  getBulkPayments: getBulkPayments,
+  getAccountPayments: getAccountPayments,
   getPathFind: getPathFind
 };
 
@@ -38,7 +38,8 @@ function submitPayment($, req, res, next) {
     payment: req.body.payment,
     secret: req.body.secret,
     client_resource_id: req.body.client_resource_id,
-    url_base: req.protocol + '://' + req.host + ({ 80: ':80', 443:':443' }[$.config.get('PORT')] || '/')
+    // TODO: is this the correct way to construct the url_base? When should the port be included?
+    url_base: req.protocol + '://' + req.host + ($.config && $.config.get('PORT') ? ':' + $.config.get('PORT') : '')
   };
 
   function validateOptions(async_callback) {
@@ -123,10 +124,104 @@ function submitPayment($, req, res, next) {
       res.json(200, {
         success: true,
         client_resource_id: client_resource_id,
-        status_url: '/v1/accounts/' + params.payment.source_account + '/payments/' + client_resource_id
+        status_url: params.url_base + '/v1/accounts/' + params.payment.source_account + '/payments/' + client_resource_id
       });
     }
   });
+};
+
+/**
+ *  Check that the given payment is valid. If not
+ *  pass an error to the callback. Otherwise call
+ *  the callback with (null, true)
+ *
+ *  @param {Payment} payment
+ *  @param {Function} callback
+ *
+ *  @callback
+ *  @param {Error} error
+ *  @param {Boolean} is_valid Only defined if there is no error
+ */
+function paymentIsValid(payment, callback) {
+  // Ripple addresses
+  if (!validator.isValid(payment.source_account, 'RippleAddress')) {
+    callback(new TypeError('Invalid parameter: source_account. Must be a valid Ripple address'));
+    return;
+  }
+  if (!validator.isValid(payment.destination_account, 'RippleAddress')) {
+    callback(new TypeError('Invalid parameter: destination_account. Must be a valid Ripple address'));
+    return;
+  }
+
+  // Tags
+  if (payment.source_tag && (!validator.isValid(payment.source_tag, 'UINT32'))) {
+    callback(new TypeError('Invalid parameter: source_tag. Must be a string representation of an unsiged 32-bit integer'));
+    return;
+  }
+  if (payment.destination_tag && (!validator.isValid(payment.destination_tag, 'UINT32'))) {
+    callback(new TypeError('Invalid parameter: destination_tag. Must be a string representation of an unsiged 32-bit integer'));
+    return;
+  }
+
+  // Amounts
+  // destination_amount is required, source_amount is optional
+  if (!payment.destination_amount || (!validator.isValid(payment.destination_amount, 'Amount'))) {
+    callback(new TypeError('Invalid parameter: destination_amount. Must be a valid Amount object'));
+    return;
+  }
+  if (payment.source_amount && (!validator.isValid(payment.source_amount, 'Amount'))) {
+    callback(new TypeError('Invalid parameter: source_amount. Must be a valid Amount object'));
+    return;
+  }
+
+  // No issuer for XRP
+  if (payment.destination_amount && payment.destination_amount.currency.toUpperCase() === 'XRP' && payment.destination_amount.issuer) {
+    callback(new TypeError('Invalid parameter: destination_amount. XRP cannot have issuer'));
+    return;
+  }
+  if (payment.source_amount && payment.source_amount.currency.toUpperCase() === 'XRP' && payment.source_amount.issuer) {
+    callback(new TypeError('Invalid parameter: source_amount. XRP cannot have issuer'));
+    return;
+  }
+
+  // Slippage
+  if (payment.source_slippage && !validator.isValid(payment.source_slippage, 'FloatString')) {
+    callback(new TypeError('Invalid parameter: source_slippage. Must be a valid FloatString'));
+    return;
+  }
+
+  // Advanced options
+  if (payment.invoice_id && !validator.isValid(payment.invoice_id, 'Hash256')) {
+    callback(new TypeError('Invalid parameter: invoice_id. Must be a valid Hash256'));
+    return;
+  }
+  if (payment.paths) {
+    if (typeof payment.paths === 'string') {
+      try {
+        JSON.parse(payment.paths);
+      } catch (e) {
+        callback(new TypeError('Invalid parameter: paths. Must be a valid JSON string or object'));
+        return;
+      }
+    } else if (typeof payment.paths === 'object') {
+      try {
+        JSON.parse(JSON.stringify(payment.paths));
+      } catch (e) {
+        callback(new TypeError('Invalid parameter: paths. Must be a valid JSON string or object'));
+        return;
+      }
+    }
+  }
+  if (payment.hasOwnProperty('partial_payment') && typeof payment.partial_payment !== 'boolean') {
+    callback(new TypeError('Invalid parameter: partial_payment. Must be a boolean'));
+    return;
+  }
+  if (payment.hasOwnProperty('no_direct_ripple') && typeof payment.no_direct_ripple !== 'boolean') {
+    callback(new TypeError('Invalid parameter: no_direct_ripple. Must be a boolean'));
+    return;
+  }
+
+  callback(null, true);
 };
 
 /**
@@ -207,7 +302,8 @@ function getPayment($, req, res, next) {
 
   function formatTransaction(transaction, callback) {
     if (transaction) {
-      paymentformatter.parsePaymentFromTx(transaction, { account: opts.account }, callback);
+      var payment = parsePaymentFromTx(transaction, { account: opts.account }
+      callback(null, payment);
     } else {
       res.json(404, {
         success: false,
@@ -260,7 +356,7 @@ function getPayment($, req, res, next) {
  *  @param {Express.js Response} res
  *  @param {Express.js Next} next
  */
-function getBulkPayments($, req, res, next) {
+function getAccountPayments($, req, res, next) {
   var remote = $.remote;
   var dbinterface = $.dbinterface;
 
@@ -282,8 +378,10 @@ function getBulkPayments($, req, res, next) {
   };
 
   function formatTransactions(transactions, callback) {
+    // TODO: make this synchronous
     async.map(transactions, function(transaction, map_callback) {
-      paymentformatter.parsePaymentFromTx(transaction, { account: req.params.account }, map_callback);
+      var payment = parsePaymentFromTx(transaction, { account: req.params.account });
+      map_callback(null, payment);
     }, callback);
   };
 
@@ -379,6 +477,7 @@ function getPathFind($, req, res, next) {
       });
     };
 
+    // TODO: make this a global variable instead of hard-coded values
     request.timeout(1000 * 20, function() {
       request.removeAllListeners();
       reconnectRippled();
@@ -403,7 +502,7 @@ function getPathFind($, req, res, next) {
       return callback(null, payment_options);
     }
 
-    if (~pathfind_results.destination_currencies.indexOf(params.destination_amount.currency)) {
+    if (pathfind_results.destination_currencies.indexOf(params.destination_amount.currency) === -1) {
       res.json(404, { success: false, message: 'No paths found.' +
         'The destination_account does not accept ' +
         params.destination_amount.currency +
@@ -461,6 +560,14 @@ function attachClientResourceId(dbinterface, payment, callback) {
   });
 };
 
+/**
+ *  Validate and parse the pathfinding parameters.
+ *
+ *  @param {RippleAddress} params.source_account
+ *  @param {RippleAddress} params.destination_account
+ *  @param {Amount} params.destination_amount
+ *  @param {Array of Currencies} params.source_currencies
+ */
 function parseParams(params, callback) {
   var source_currencies = [ ];
 
@@ -567,7 +674,7 @@ function addDirectXrpPath(remote, pathfind_results, callback) {
   });
 };
 
-function parsePaymentFromTx(tx, opts, callback) {
+function parsePaymentFromTx(tx, opts) {
   if (typeof opts === 'function') {
     callback = opts;
     opts = {};
@@ -654,98 +761,10 @@ function parsePaymentFromTx(tx, opts, callback) {
     }
   });
 
-  callback(null, payment);
+  return payment;
 };
 
-/**
- *  
- *
- *
- *
- */
-function paymentIsValid(payment, callback) {
-  // Ripple addresses
-  if (!validator.isValid(payment.source_account, 'RippleAddress')) {
-    callback(new TypeError('Invalid parameter: source_account. Must be a valid Ripple address'));
-    return;
-  }
-  if (!validator.isValid(payment.destination_account, 'RippleAddress')) {
-    callback(new TypeError('Invalid parameter: destination_account. Must be a valid Ripple address'));
-    return;
-  }
 
-  // Tags
-  if (payment.source_tag && (!validator.isValid(payment.source_tag, 'UINT32'))) {
-    callback(new TypeError('Invalid parameter: source_tag. Must be a string representation of an unsiged 32-bit integer'));
-    return;
-  }
-  if (payment.destination_tag && (!validator.isValid(payment.destination_tag, 'UINT32'))) {
-    callback(new TypeError('Invalid parameter: destination_tag. Must be a string representation of an unsiged 32-bit integer'));
-    return;
-  }
-
-  // Amounts
-  // destination_amount is required, source_amount is optional
-  if (!payment.destination_amount || (!validator.isValid(payment.destination_amount, 'Amount'))) {
-    callback(new TypeError('Invalid parameter: destination_amount. Must be a valid Amount object'));
-    return;
-  }
-  if (payment.source_amount && (!validator.isValid(payment.source_amount, 'Amount'))) {
-    callback(new TypeError('Invalid parameter: source_amount. Must be a valid Amount object'));
-    return;
-  }
-
-  // No issuer for XRP
-  if (payment.destination_amount && payment.destination_amount.currency.toUpperCase() === 'XRP' && payment.destination_amount.issuer) {
-    callback(new TypeError('Invalid parameter: destination_amount. XRP cannot have issuer'));
-    return;
-  }
-  if (payment.source_amount && payment.source_amount.currency.toUpperCase() === 'XRP' && payment.source_amount.issuer) {
-    callback(new TypeError('Invalid parameter: source_amount. XRP cannot have issuer'));
-    return;
-  }
-
-
-  // Slippage
-  if (payment.source_slippage && !validator.isValid(payment.source_slippage, 'FloatString')) {
-    callback(new TypeError('Invalid parameter: source_slippage. Must be a valid FloatString'));
-    return;
-  }
-
-
-  // Advanced options
-  if (payment.invoice_id && !validator.isValid(payment.invoice_id, 'Hash256')) {
-    callback(new TypeError('Invalid parameter: invoice_id. Must be a valid Hash256'));
-    return;
-  }
-  if (payment.paths) {
-    if (typeof payment.paths === 'string') {
-      try {
-        JSON.parse(payment.paths);
-      } catch (e) {
-        callback(new TypeError('Invalid parameter: paths. Must be a valid JSON string or object'));
-        return;
-      }
-    } else if (typeof payment.paths === 'object') {
-      try {
-        JSON.parse(JSON.stringify(payment.paths));
-      } catch (e) {
-        callback(new TypeError('Invalid parameter: paths. Must be a valid JSON string or object'));
-        return;
-      }
-    }
-  }
-  if (payment.hasOwnProperty('partial_payment') && typeof payment.partial_payment !== 'boolean') {
-    callback(new TypeError('Invalid parameter: partial_payment. Must be a boolean'));
-    return;
-  }
-  if (payment.hasOwnProperty('no_direct_ripple') && typeof payment.no_direct_ripple !== 'boolean') {
-    callback(new TypeError('Invalid parameter: no_direct_ripple. Must be a boolean'));
-    return;
-  }
-
-  callback(null, true);
-};
 
 function paymentToTransaction(payment, callback) {
   // Validate Input

@@ -180,7 +180,7 @@ app.get('/v1/server/connected', api.info.isConnected);
 app.post('/v1/payments', api.payments.submit);
 app.post('/v1/accounts/:account/payments', api.payments.submit);
 
-app.get('/v1/accounts/:account/payments', api.payments.getBulkPayments);
+app.get('/v1/accounts/:account/payments', api.payments.getAccountPayments);
 app.get('/v1/accounts/:account/payments/:identifier', api.payments.get);
 app.get('/v1/accounts/:account/payments/paths/:destination_account/:destination_amount_string', api.payments.getPathFind);
 

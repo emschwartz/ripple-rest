@@ -36,7 +36,7 @@ function getNotification($, req, res, next) {
     };
 
     // Add url_base to each url in notification
-    var url_base = req.protocol + '://' + req.host + ($.config && $.config.get('PORT') ? {80: ':80', 443: ':443' }[$.config.get('PORT')] : '');
+    var url_base = req.protocol + '://' + req.host + ($.config && $.config.get('PORT') ? ':' + $.config.get('PORT') : '');
     Object.keys(response.notification).forEach(function(key){
       if (/url/.test(key) && response.notification[key]) {
         response.notification[key] = url_base + response.notification[key];
