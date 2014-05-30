@@ -8,6 +8,10 @@ var notifications = require('../api/notifications');
 var ripple        = require('ripple-lib');
 chai.use(sinonchai);
 
+// Note that these tests use heavily stubbed versions of the 
+// dependencies such as ripple-lib. These must be updated if 
+// the dependencies are changed in any significant way
+
 describe('api/notifications', function(){
 
   describe('.getNotification()', function(done){

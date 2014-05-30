@@ -8,6 +8,10 @@ var server_lib   = require('../lib/server-lib');
 var ripple       = require('ripple-lib');
 chai.use(sinonchai);
 
+// Note that these tests use heavily stubbed versions of the 
+// dependencies such as ripple-lib. These must be updated if 
+// the dependencies are changed in any significant way
+
 describe('api/transactions', function(){
 
   describe('.submit()', function(){
