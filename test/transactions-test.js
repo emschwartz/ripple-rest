@@ -1280,6 +1280,82 @@ describe('api/transactions', function(){
 
   describe('.getAccountTransactions()', function(){
 
+    it('should respond with an error if the account is missing', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          //console.log('dbinterface.getTransaction');
+          callback();
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        // account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz'
+      }, {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(400);
+          expect(json_response.message).to.include('account');
+          done();
+        }
+      }, function(err, resulting_transactions){
+
+      });
+
+    });
+
+    it('should respond with an error if the account is invalid', function(done){
+
+      var dbinterface = {
+        getFailedTransactions: function(params, callback) {
+          //console.log('dbinterface.getTransaction');
+          callback();
+        }
+      };
+       
+      var remote = new ripple.Remote({
+        servers: [ ],
+        storage: dbinterface
+      });
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      remote._getServer = function() {
+        return Server;
+      };
+      remote.connect = function(){};
+
+      transactions.getAccountTransactions({
+        remote: remote,
+        dbinterface: dbinterface
+      }, {
+        account: 'not a valid account'
+      }, {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(400);
+          expect(json_response.message).to.include('account');
+          done();
+        }
+      }, function(err, resulting_transactions){
+
+      });
+
+    });
+
     it('should report an error if there is no connection to rippled', function(done){
 
       var dbinterface = {
@@ -1304,7 +1380,9 @@ describe('api/transactions', function(){
       transactions.getAccountTransactions({
         remote: remote,
         dbinterface: dbinterface
-      }, {}, {
+      }, {
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz'
+      }, {
         json: function(status_code, json_response) {
           expect(status_code).to.equal(500);
           expect(json_response.message).to.include('Cannot connect to rippled');
@@ -1320,7 +1398,7 @@ describe('api/transactions', function(){
 
       var dbinterface = {
         getFailedTransactions: function(params, callback) {
-          expect(params.account).to.equal('test account');
+          expect(params.account).to.equal('rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz');
           expect(params.ledger_index_min).to.equal(-1);
           expect(params.ledger_index_max).to.equal(5000000);
           expect(params.earliest_first).to.be.true;
@@ -1344,7 +1422,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 5000000,
         binary: false,
@@ -1380,7 +1458,7 @@ describe('api/transactions', function(){
       };
       remote.connect = function(){};
       remote.requestAccountTx = function(params, callback) {
-        expect(params.account).to.equal('test account');
+        expect(params.account).to.equal('rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz');
         expect(params.ledger_index_min).to.equal(-1);
         expect(params.ledger_index_max).to.equal(5000000);
         expect(params.forward).to.be.true;
@@ -1391,7 +1469,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 5000000,
         binary: false,
@@ -1432,7 +1510,7 @@ describe('api/transactions', function(){
         callback(null, {
           transactions: [{
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'Payment',
               hash: 'transaction hash 1',
               ledger_index: 1
@@ -1442,7 +1520,7 @@ describe('api/transactions', function(){
           }, {
             tx: {
               Account: 'other account',
-              Destination: 'test account',
+              Destination: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'Payment',
               hash: 'transaction hash 3',
               ledger_index: 10
@@ -1451,7 +1529,7 @@ describe('api/transactions', function(){
             validated: true
           }, {
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 15
@@ -1463,7 +1541,7 @@ describe('api/transactions', function(){
           // The following transactions should not be included in the results
           {
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'TrustSet',
               hash: 'transaction hash 5',
               ledger_index: 15
@@ -1472,7 +1550,7 @@ describe('api/transactions', function(){
             validated: true
           }, {
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 6',
               ledger_index: 20
@@ -1481,7 +1559,7 @@ describe('api/transactions', function(){
             validated: true
           }, {
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 15
@@ -1496,7 +1574,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 25,
         binary: false,
@@ -1533,19 +1611,19 @@ describe('api/transactions', function(){
       var dbinterface = {
         getFailedTransactions: function(params, callback) {
           callback(null, [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 2',
             ledger_index: 5,
             meta: { TransactionResult: 'tecPATH_DRY' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCancel',
             hash: 'transaction hash 7',
             ledger_index: 21,
             meta: { TransactionResult: 'tejSecretUnknown' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 8',
             ledger_index: 22,
@@ -1569,7 +1647,7 @@ describe('api/transactions', function(){
         callback(null, {
           transactions: [{
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'Payment',
               hash: 'transaction hash 1',
               ledger_index: 1
@@ -1579,7 +1657,7 @@ describe('api/transactions', function(){
           }, {
             tx: {
               Account: 'other account',
-              Destination: 'test account',
+              Destination: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'Payment',
               hash: 'transaction hash 3',
               ledger_index: 10
@@ -1588,7 +1666,7 @@ describe('api/transactions', function(){
             validated: true
           }, {
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 15
@@ -1597,7 +1675,7 @@ describe('api/transactions', function(){
             validated: true
           }, {
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'TrustSet',
               hash: 'transaction hash 5',
               ledger_index: 15
@@ -1606,7 +1684,7 @@ describe('api/transactions', function(){
             validated: true
           }, {
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 6',
               ledger_index: 20
@@ -1615,7 +1693,7 @@ describe('api/transactions', function(){
             validated: true
           }, {
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 15
@@ -1630,7 +1708,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 25,
         binary: false,
@@ -1670,19 +1748,19 @@ describe('api/transactions', function(){
       var dbinterface = {
         getFailedTransactions: function(params, callback) {
           callback(null, [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 1',
             ledger_index: 5,
             meta: { TransactionResult: 'tecPATH_DRY' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 3',
             ledger_index: 22,
             meta: { TransactionResult: 'tejSecretUnknown' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 5',
             ledger_index: 24,
@@ -1706,7 +1784,7 @@ describe('api/transactions', function(){
         callback(null, {
           transactions: [{
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'Payment',
               hash: 'transaction hash 0',
               ledger_index: 1
@@ -1716,7 +1794,7 @@ describe('api/transactions', function(){
           }, {
             tx: {
               Account: 'other account',
-              Destination: 'test account',
+              Destination: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'Payment',
               hash: 'transaction hash 2',
               ledger_index: 10
@@ -1725,7 +1803,7 @@ describe('api/transactions', function(){
             validated: true
           }, {
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 22
@@ -1740,7 +1818,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 25,
         binary: false,
@@ -1779,19 +1857,19 @@ describe('api/transactions', function(){
       var dbinterface = {
         getFailedTransactions: function(params, callback) {
           callback(null, [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 1',
             ledger_index: 5,
             meta: { TransactionResult: 'tecPATH_DRY' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 3',
             ledger_index: 22,
             meta: { TransactionResult: 'tejSecretUnknown' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 5',
             ledger_index: 24,
@@ -1815,7 +1893,7 @@ describe('api/transactions', function(){
         callback(null, {
           transactions: [{
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'Payment',
               hash: 'transaction hash 0',
               ledger_index: 1
@@ -1825,7 +1903,7 @@ describe('api/transactions', function(){
           }, {
             tx: {
               Account: 'other account',
-              Destination: 'test account',
+              Destination: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'Payment',
               hash: 'transaction hash 2',
               ledger_index: 10
@@ -1834,7 +1912,7 @@ describe('api/transactions', function(){
             validated: true
           }, {
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 22
@@ -1849,7 +1927,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 25,
         binary: false,
@@ -1888,13 +1966,13 @@ describe('api/transactions', function(){
       var dbinterface = {
         getFailedTransactions: function(params, callback) {
           callback(null, [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 3',
             ledger_index: 22,
             meta: { TransactionResult: 'tejSecretUnknown' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 5',
             ledger_index: 24,
@@ -1918,7 +1996,7 @@ describe('api/transactions', function(){
         callback(null, {
           transactions: [{
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 22
@@ -1933,7 +2011,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 25,
         binary: false,
@@ -1941,21 +2019,21 @@ describe('api/transactions', function(){
         types: [ 'payment', 'offercreate' ],
         exclude_failed: false,
         previous_transactions: [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 0',
             ledger_index: 1,
             meta: { TransactionResult: 'tesSUCCESS' },
             validated: true
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 1',
             ledger_index: 5,
             meta: { TransactionResult: 'tecPATH_DRY' }
           }, {
             Account: 'other account',
-            Destination: 'test account',
+            Destination: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 2',
             ledger_index: 10,
@@ -1994,13 +2072,13 @@ describe('api/transactions', function(){
       var dbinterface = {
         getFailedTransactions: function(params, callback) {
           callback(null, [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 3',
             ledger_index: 22,
             meta: { TransactionResult: 'tejSecretUnknown' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 5',
             ledger_index: 24,
@@ -2024,7 +2102,7 @@ describe('api/transactions', function(){
         callback(null, {
           transactions: [{
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 22
@@ -2039,7 +2117,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 25,
         binary: false,
@@ -2048,21 +2126,21 @@ describe('api/transactions', function(){
         exclude_failed: false,
         max: 5,
         previous_transactions: [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 0',
             ledger_index: 1,
             meta: { TransactionResult: 'tesSUCCESS' },
             validated: true
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 1',
             ledger_index: 5,
             meta: { TransactionResult: 'tecPATH_DRY' }
           }, {
             Account: 'other account',
-            Destination: 'test account',
+            Destination: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 2',
             ledger_index: 10,
@@ -2102,13 +2180,13 @@ describe('api/transactions', function(){
       var dbinterface = {
         getFailedTransactions: function(params, callback) {
           callback(null, [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 3',
             ledger_index: 22,
             meta: { TransactionResult: 'tejSecretUnknown' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 5',
             ledger_index: 24,
@@ -2132,7 +2210,7 @@ describe('api/transactions', function(){
         callback(null, {
           transactions: [{
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 22
@@ -2147,7 +2225,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 25,
         binary: false,
@@ -2156,21 +2234,21 @@ describe('api/transactions', function(){
         exclude_failed: false,
         offset: 2,
         previous_transactions: [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 0',
             ledger_index: 1,
             meta: { TransactionResult: 'tesSUCCESS' },
             validated: true
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 1',
             ledger_index: 5,
             meta: { TransactionResult: 'tecPATH_DRY' }
           }, {
             Account: 'other account',
-            Destination: 'test account',
+            Destination: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 2',
             ledger_index: 10,
@@ -2209,13 +2287,13 @@ describe('api/transactions', function(){
       var dbinterface = {
         getFailedTransactions: function(params, callback) {
           callback(null, [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 3',
             ledger_index: 22,
             meta: { TransactionResult: 'tejSecretUnknown' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 5',
             ledger_index: 24,
@@ -2239,7 +2317,7 @@ describe('api/transactions', function(){
         callback(null, {
           transactions: [{
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 22
@@ -2254,7 +2332,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 25,
         binary: false,
@@ -2266,21 +2344,21 @@ describe('api/transactions', function(){
           seq: 'some seq'
         },
         previous_transactions: [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 0',
             ledger_index: 1,
             meta: { TransactionResult: 'tesSUCCESS' },
             validated: true
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 1',
             ledger_index: 5,
             meta: { TransactionResult: 'tecPATH_DRY' }
           }, {
             Account: 'other account',
-            Destination: 'test account',
+            Destination: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 2',
             ledger_index: 10,
@@ -2306,13 +2384,13 @@ describe('api/transactions', function(){
       var dbinterface = {
         getFailedTransactions: function(params, callback) {
           callback(null, [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 3',
             ledger_index: 22,
             meta: { TransactionResult: 'tejSecretUnknown' }
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'OfferCreate',
             hash: 'transaction hash 5',
             ledger_index: 24,
@@ -2336,7 +2414,7 @@ describe('api/transactions', function(){
         callback(null, {
           transactions: [{
             tx: {
-              Account: 'test account',
+              Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
               TransactionType: 'OfferCreate',
               hash: 'transaction hash 4',
               ledger_index: 22
@@ -2351,7 +2429,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: -1,
         ledger_index_max: 25,
         binary: false,
@@ -2360,21 +2438,21 @@ describe('api/transactions', function(){
         exclude_failed: false,
         min: 10,
         previous_transactions: [{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 0',
             ledger_index: 1,
             meta: { TransactionResult: 'tesSUCCESS' },
             validated: true
           }, {
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 1',
             ledger_index: 5,
             meta: { TransactionResult: 'tecPATH_DRY' }
           }, {
             Account: 'other account',
-            Destination: 'test account',
+            Destination: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             TransactionType: 'Payment',
             hash: 'transaction hash 2',
             ledger_index: 10,
@@ -2406,7 +2484,7 @@ describe('api/transactions', function(){
       for (var t = 0; t < 40; t++) {
         var transaction = {
           tx:{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             hash: 'transaction hash ' + t,
             ledger_index: 2 * t
           },
@@ -2474,7 +2552,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: 0,
         ledger_index_max: 80,
         types: [ 'payment' ],
@@ -2508,7 +2586,7 @@ describe('api/transactions', function(){
       for (var t = 0; t < 20; t++) {
         var transaction = {
           tx:{
-            Account: 'test account',
+            Account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
             hash: 'transaction hash ' + t,
             ledger_index: 2 * t
           },
@@ -2576,7 +2654,7 @@ describe('api/transactions', function(){
         remote: remote,
         dbinterface: dbinterface
       }, {
-        account: 'test account',
+        account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
         ledger_index_min: 0,
         ledger_index_max: 40,
         types: [ 'payment' ],
