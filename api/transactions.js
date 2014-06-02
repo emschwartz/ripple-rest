@@ -309,6 +309,20 @@ function getAccountTransactions($, opts, res, callback) {
     opts.limit = Math.max(opts.max, module.exports.DEFAULT_RESULTS_PER_PAGE);
   }
 
+  function validateOptions(async_callback) {
+    if (!opts.account) {
+      return res.json(400, { success: false, message: 'Missing parameter: account. ' +
+        'Must supply a valid Ripple Address to query account transactions' });
+    }
+
+    if (!validator.isValid(opts.account, 'RippleAddress')) {
+      return res.json(400, { success: false, message: 'Invalid parameter: account. ' +
+        'Must supply a valid Ripple Address to query account transactions' });
+    }
+
+    async_callback();
+  };
+
   function ensureConnected(async_callback) {
     server_lib.ensureConnected($.remote, function(err, connected){
       if (connected) {
@@ -361,6 +375,7 @@ function getAccountTransactions($, opts, res, callback) {
   };
 
   var steps = [
+    validateOptions,
     ensureConnected,
     queryTransactions,
     filterTransactions,
