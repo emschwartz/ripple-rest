@@ -236,15 +236,12 @@ function paymentIsValid(payment, callback) {
  *  @param {Express.js Next} next
  */
 function getPayment($, req, res, next) {
-  var remote = $.remote;
-  var dbinterface = $.dbinterface;
-
   var opts = {
     account: req.params.account,
     identifier: req.params.identifier
   };
 
-  function validateOptions(callback) {
+  function validateOptions(async_callback) {
     if (!opts.account) {
       return res.json(400, { success: false, message: 'Missing parameter: account. ' +
         'Must provide account to get payment details' });
@@ -256,22 +253,21 @@ function getPayment($, req, res, next) {
     }
 
     if (!opts.identifier) {
-      return res.json(400, { success: false, messge: 'Missing parameter: hash or client_resource_id. ' +
+      return res.json(400, { success: false, message: 'Missing parameter: hash or client_resource_id. ' +
         'Must provide transaction hash or client_resource_id to get payment details' });
     }
 
-    var hasIdentifier = validator.isValid(opts.identifier, 'Hash256') || validator.isValid(opts.identifier, 'ResourceId')
-
-    if (!hasIdentifier) {
+    if (!validator.isValid(opts.identifier, 'Hash256') &&
+      !validator.isValid(opts.identifier, 'ResourceId')) {
       return res.json(400, { success: false, message: 'Invalid Parameter: hash or client_resource_id. ' +
         'Must provide a transaction hash or client_resource_id to get payment details' });
     }
 
-    callback();
+    async_callback();
   };
 
-  function ensureConnected(callback) {
-    serverLib.ensureConnected(remote, function(err, connected) {
+  function ensureConnected(async_callback) {
+    serverLib.ensureConnected($.remote, function(err, connected) {
       if (connected) {
         async_callback();
       } else if (err) {
@@ -283,27 +279,28 @@ function getPayment($, req, res, next) {
   };
 
   // If the transaction was not in the outgoing_transactions db, get it from rippled
-  function getTransaction(callback) {
-    transactions.getTransactionHelper($, opts, callback);
+  function getTransaction(async_callback) {
+    $.opts = opts;
+    transactions.getTransactionHelper($, req, res, async_callback);
   };
 
-  function checkIsPayment(transaction, callback) {
+  function checkIsPayment(transaction, async_callback) {
     var isPayment = transaction && /^payment$/i.test(transaction.TransactionType);
 
     if (isPayment) {
-      callback(null, transaction);
+      async_callback(null, transaction);
     } else {
-      res.json(404, {
+      res.json(400, {
         success: false,
         message: 'Not a payment. The transaction corresponding to the given identifier is not a payment.'
       });
     }
   };
 
-  function formatTransaction(transaction, callback) {
+  function formatTransaction(transaction, async_callback) {
     if (transaction) {
-      var payment = parsePaymentFromTx(transaction, { account: opts.account }
-      callback(null, payment);
+      var payment = parsePaymentFromTx(transaction, { account: opts.account });
+      async_callback(null, payment);
     } else {
       res.json(404, {
         success: false,
@@ -327,7 +324,7 @@ function getPayment($, req, res, next) {
     if (err) {
       next(err);
     } else {
-      res.json({ success: true, payment: payment });
+      res.json(200, { success: true, payment: payment });
     }
   });
 };
