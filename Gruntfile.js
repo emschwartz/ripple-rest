@@ -1,17 +1,27 @@
 var fs        = require('fs');
-var pg        = require('pg');
-// var sqlite3   = require('sqlite3').verbose();
 var config    = require('./config/config-loader');
 var dbconnect; 
+var spawn = require('child_process').spawn;
+
 
 module.exports = function(grunt) {
+
+  function dbMigrateUp(callback){
+    var migration = spawn('db-migrate', ['up'], { cwd: __dirname+"/db" });
+    migration.stdout.on('data', function(data){ console.log(data.toString()) });
+    migration.stderr.on('data', function(data){ console.log(data.toString()) });
+    migration.on('close', callback);
+  }
 
   var watched_files = ['config/*', 'controllers/*', 'lib/*', '*.js', '*.json'];
 
   grunt.initConfig({
 
     jshint: {
-      all: watched_files
+      all: watched_files,
+      options: {
+        '-W032': true
+      }
     },
 
     simplemocha: {
@@ -36,7 +46,6 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.loadNpmTasks('grunt-db-migrate');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-simple-mocha');
 
@@ -45,7 +54,6 @@ module.exports = function(grunt) {
   grunt.registerTask('test', ['jshint', 'simplemocha:local']);
 
   grunt.registerTask('dbsetup', 'Check if the database is running / exists', function(){
-
     var done = this.async();
     var db_url = config.get('DATABASE_URL');
 
@@ -53,11 +61,9 @@ module.exports = function(grunt) {
       dbconnect = require('./db/db-connect')(db_url, function(err, db){
         if (err) {
           grunt.fail.fatal(err);
+        } else {
+          dbMigrateUp(done);
         }
-
-        grunt.task.run('migrate:up');
-
-        done();
       });
     } else {
       grunt.log.writeln('No DATABASE_URL specified, defaulting to sqlite3 in memory. DO NOT USE THIS FOR A PRODUCTION SYSTEM');
