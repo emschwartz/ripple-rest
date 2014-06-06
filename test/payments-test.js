@@ -2417,9 +2417,412 @@ describe('api/payments', function(){
 
     });
 
-  //   it('should produce an array of properly formatted payment objects', function(){
+    it('should produce an array of payment objects, each with all of the available fields included even if they are empty strings', function(done){
 
-  //   });
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '0.001+USD'
+        },
+        query: {
+          source_currencies: 'XRP,USD,BTC'
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(200);
+
+          json_response.payments.forEach(function(payment){
+            expect(payment).to.have.keys([
+              'source_account',
+              'source_tag',
+              'source_amount',
+              'source_slippage',
+              'destination_account',
+              'destination_tag',
+              'destination_amount',
+              'invoice_id',
+              'paths',
+              'partial_payment',
+              'no_direct_ripple'
+            ]);
+          });
+
+          done();
+        }
+      };
+      var next = function(error){
+        expect(error).not.to.exist;
+      };
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      Server.connect = function(){};
+      $.remote._servers.push(Server);
+      $.remote._getServer = function() {
+        return Server;
+      };
+
+      $.remote.requestRipplePathFind = function(params) {
+        return {
+          once: function(event_name, event_handler){
+            if (event_name === 'success') {
+              event_handler({
+                "alternatives": [
+                  {
+                    "paths_canonical": [],
+                    "paths_computed": [
+                      [
+                        {
+                          "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        }
+                      ]
+                    ],
+                    "source_amount": {
+                      "currency": "USD",
+                      "issuer": "r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59",
+                      "value": "0.001002"
+                    }
+                  },
+                  {
+                    "paths_canonical": [],
+                    "paths_computed": [
+                      [
+                        {
+                          "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        },
+                        {
+                          "currency": "XRP",
+                          "type": 16,
+                          "type_hex": "0000000000000010"
+                        },
+                        {
+                          "currency": "USD",
+                          "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 48,
+                          "type_hex": "0000000000000030"
+                        },
+                        {
+                          "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        }
+                      ],
+                      [
+                        {
+                          "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        },
+                        {
+                          "currency": "USD",
+                          "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 48,
+                          "type_hex": "0000000000000030"
+                        },
+                        {
+                          "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        }
+                      ],
+                      [
+                        {
+                          "account": "rpgKWEmNqSDAGFhy5WDnsyPqfQxbWxKeVd",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        },
+                        {
+                          "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        },
+                        {
+                          "currency": "USD",
+                          "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 48,
+                          "type_hex": "0000000000000030"
+                        },
+                        {
+                          "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        }
+                      ],
+                      [
+                        {
+                          "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        },
+                        {
+                          "currency": "XRP",
+                          "type": 16,
+                          "type_hex": "0000000000000010"
+                        },
+                        {
+                          "currency": "USD",
+                          "issuer": "rBVuBbPYvLyf8HvMdf48nayR8XF8X9J3Ds",
+                          "type": 48,
+                          "type_hex": "0000000000000030"
+                        },
+                        {
+                          "account": "rBVuBbPYvLyf8HvMdf48nayR8XF8X9J3Ds",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        },
+                        {
+                          "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                          "type": 1,
+                          "type_hex": "0000000000000001"
+                        }
+                      ]
+                    ],
+                    "source_amount": {
+                      "currency": "BTC",
+                      "issuer": "r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59",
+                      "value": "0.000001530700999096105"
+                    }
+                  }
+                ],
+                "destination_account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+                "destination_currencies": [
+                  "FAK",
+                  "BER",
+                  "USD",
+                  "XRP"
+                ]
+              });
+            }
+          },
+          timeout: function(){},
+          request: function(){}
+        };
+      };
+      $.remote.requestAccountInfo = function(account, callback) {
+        callback(null, {
+          account_data: {
+            Balance: '10000000'
+          }
+        });
+      };
+
+      payments.getPathFind($, req, res, next);
+
+    });
+
+    it('should include the stringified path in the payment object', function(done){
+
+      var test_pathfind_result = {
+        "alternatives": [
+          {
+            "paths_canonical": [],
+            "paths_computed": [
+              [
+                {
+                  "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                }
+              ]
+            ],
+            "source_amount": {
+              "currency": "USD",
+              "issuer": "r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59",
+              "value": "0.001002"
+            }
+          },
+          {
+            "paths_canonical": [],
+            "paths_computed": [
+              [
+                {
+                  "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                },
+                {
+                  "currency": "XRP",
+                  "type": 16,
+                  "type_hex": "0000000000000010"
+                },
+                {
+                  "currency": "USD",
+                  "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 48,
+                  "type_hex": "0000000000000030"
+                },
+                {
+                  "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                }
+              ],
+              [
+                {
+                  "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                },
+                {
+                  "currency": "USD",
+                  "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 48,
+                  "type_hex": "0000000000000030"
+                },
+                {
+                  "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                }
+              ],
+              [
+                {
+                  "account": "rpgKWEmNqSDAGFhy5WDnsyPqfQxbWxKeVd",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                },
+                {
+                  "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                },
+                {
+                  "currency": "USD",
+                  "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 48,
+                  "type_hex": "0000000000000030"
+                },
+                {
+                  "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                }
+              ],
+              [
+                {
+                  "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                },
+                {
+                  "currency": "XRP",
+                  "type": 16,
+                  "type_hex": "0000000000000010"
+                },
+                {
+                  "currency": "USD",
+                  "issuer": "rBVuBbPYvLyf8HvMdf48nayR8XF8X9J3Ds",
+                  "type": 48,
+                  "type_hex": "0000000000000030"
+                },
+                {
+                  "account": "rBVuBbPYvLyf8HvMdf48nayR8XF8X9J3Ds",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                },
+                {
+                  "account": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+                  "type": 1,
+                  "type_hex": "0000000000000001"
+                }
+              ]
+            ],
+            "source_amount": {
+              "currency": "BTC",
+              "issuer": "r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59",
+              "value": "0.000001530700999096105"
+            }
+          }
+        ],
+        "destination_account": "rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz",
+        "destination_currencies": [
+          "FAK",
+          "BER",
+          "USD",
+          "XRP"
+        ]
+      };
+
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '0.001+USD'
+        },
+        query: {
+          source_currencies: 'XRP,USD,BTC'
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(200);
+
+          json_response.payments.forEach(function(payment){
+            if (payment.source_amount.currency === 'XRP') {
+              expect(payment.paths).to.equal('[]');
+            } else if (payment.source_amount.currency === 'USD') {
+              expect(payment.paths).to.equal(JSON.stringify(test_pathfind_result.alternatives[0].paths_computed));
+            } else if (payment.source_amount.currency === 'BTC') {
+              expect(payment.paths).to.equal(JSON.stringify(test_pathfind_result.alternatives[1].paths_computed));
+            } 
+          });
+
+          done();
+        }
+      };
+      var next = function(error){
+        expect(error).not.to.exist;
+      };
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      Server.connect = function(){};
+      $.remote._servers.push(Server);
+      $.remote._getServer = function() {
+        return Server;
+      };
+
+      $.remote.requestRipplePathFind = function(params) {
+        return {
+          once: function(event_name, event_handler){
+            if (event_name === 'success') {
+              event_handler(test_pathfind_result);
+            }
+          },
+          timeout: function(){},
+          request: function(){}
+        };
+      };
+      $.remote.requestAccountInfo = function(account, callback) {
+        callback(null, {
+          account_data: {
+            Balance: '10000000'
+          }
+        });
+      };
+
+      payments.getPathFind($, req, res, next);
+
+    });
+
 
   });
 

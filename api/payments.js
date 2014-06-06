@@ -782,8 +782,8 @@ function getPathFind($, req, res, next) {
   };
 
   function addDirectXrpPath(pathfind_results, async_callback) {
-    // Check if destination_account accepts XRP
-    if (pathfind_results.destination_currencies.indexOf('XRP') === -1) {
+    // Check if destination_amount is XRP and if destination_account accepts XRP
+    if (typeof pathfind_results.destination_amount.currency === 'string' || pathfind_results.destination_currencies.indexOf('XRP') === -1) {
       return async_callback(null, pathfind_results);
     }
 
@@ -859,32 +859,32 @@ function getPathFind($, req, res, next) {
  *  array of payments in the ripple-rest format. The client should be 
  *  able to submit any of the payments in the array back to ripple-rest.
  *
- *  @param {rippled Pathfind results} pathfind_resultsults
+ *  @param {rippled Pathfind results} pathfind_results
  *  @param {Amount} opts.destination_amount Since this is not returned by rippled in the pathfind results it can either be added to the results or included in the opts here
  *  @param {RippleAddress} opts.source_account Since this is not returned by rippled in the pathfind results it can either be added to the results or included in the opts here
  *  
  *  @returns {Array of Payments} payments
  */
-function parsePaymentsFromPathfind(pathfind_resultsults, opts) {
+function parsePaymentsFromPathfind(pathfind_results, opts) {
   if (typeof opts === 'function') {
     callback = opts;
     opts = {};
   }
 
   if (opts && opts.destination_amount) {
-    pathfind_resultsults.destination_amount = opts.destination_amount;
+    pathfind_results.destination_amount = opts.destination_amount;
   }
 
   if (opts && opts.source_account) {
-    pathfind_resultsults.source_account = opts.source_account;
+    pathfind_results.source_account = opts.source_account;
   }
 
   var payments = [];
 
-  pathfind_resultsults.alternatives.forEach(function(alternative){
+  pathfind_results.alternatives.forEach(function(alternative){
 
     var payment = {
-      source_account: pathfind_resultsults.source_account,
+      source_account: pathfind_results.source_account,
       source_tag: '',
       source_amount: (typeof alternative.source_amount === 'string' ?
       {
@@ -895,25 +895,25 @@ function parsePaymentsFromPathfind(pathfind_resultsults, opts) {
       {
         value: alternative.source_amount.value,
         currency: alternative.source_amount.currency,
-        issuer: (alternative.source_amount.issuer === pathfind_resultsults.source_account ? 
+        issuer: (alternative.source_amount.issuer === pathfind_results.source_account ? 
           '' : 
           alternative.source_amount.issuer)
       }),
       source_slippage: '0',
-      destination_account: pathfind_resultsults.destination_account,
+      destination_account: pathfind_results.destination_account,
       destination_tag: '',
-      destination_amount: (typeof pathfind_resultsults.destination_amount === 'string' ?
+      destination_amount: (typeof pathfind_results.destination_amount === 'string' ?
         {
-          value: utils.dropsToXrp(pathfind_resultsults.destination_amount),
+          value: utils.dropsToXrp(pathfind_results.destination_amount),
           currency: 'XRP',
           issuer: ''
         } :
         {
-          value: pathfind_resultsults.destination_amount.value,
-          currency: pathfind_resultsults.destination_amount.currency,
-          issuer: (pathfind_resultsults.destination_amount.issuer === pathfind_resultsults.destination_account ?
+          value: pathfind_results.destination_amount.value,
+          currency: pathfind_results.destination_amount.currency,
+          issuer: (pathfind_results.destination_amount.issuer === pathfind_results.destination_account ?
             '' :
-            pathfind_resultsults.destination_amount.issuer)
+            pathfind_results.destination_amount.issuer)
         }),
       invoice_id: '',
       paths: JSON.stringify(alternative.paths_computed),
