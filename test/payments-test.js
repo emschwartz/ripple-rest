@@ -1869,43 +1869,368 @@ describe('api/payments', function(){
 
   });
 
-  // describe('.getPathFind()', function(){
+  describe('.getPathFind()', function(){
 
-  //   it('should respond with an error if the source_account is missing', function(){
+    it('should respond with an error if the source_account is missing', function(done){
 
-  //   });
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          // account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '1+XRP'
+        },
+        query: {
 
-  //   it('should respond with an error if the source_account is invalid', function(){
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(400);
+          expect(json_response.message).to.contain('source_account');
+          done();
+        }
+      };
+      var next = function(error){};
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now() - 1;
+      $.remote._getServer = function() {
+        return Server;
+      };
 
-  //   });
+      payments.getPathFind($, req, res, next);
 
-  //   it('should respond with an error if the destination_account is missing', function(){
+    });
 
-  //   });
+    it('should respond with an error if the source_account is invalid', function(done){
 
-  //   it('should respond with an error if the destination_account is invalid', function(){
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'some invalid account',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '1+XRP'
+        },
+        query: {
 
-  //   });
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(400);
+          expect(json_response.message).to.contain('source_account');
+          done();
+        }
+      };
+      var next = function(error){};
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now() - 1;
+      $.remote._getServer = function() {
+        return Server;
+      };
 
-  //   it('should respond with an error if the destination_amount is missing', function(){
+      payments.getPathFind($, req, res, next);
 
-  //   });
+    });
 
-  //   it('should respond with an error if the destination_amount is invalid', function(){
+    it('should respond with an error if the destination_account is missing', function(done){
 
-  //   });
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          // destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '1+XRP'
+        },
+        query: {
 
-  //   it('should respond with an error if the source_currencies list is invalid', function(){
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(400);
+          expect(json_response.message).to.contain('destination_account');
+          done();
+        }
+      };
+      var next = function(error){};
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now() - 1;
+      $.remote._getServer = function() {
+        return Server;
+      };
 
-  //   });
+      payments.getPathFind($, req, res, next);
 
-  //   it('should respond with an error if there is no connection to rippled', function(){
+    });
 
-  //   });
+    it('should respond with an error if the destination_account is invalid', function(done){
 
-  //   it('should convert the parameters into the form expected by ripple-lib', function(){
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'some invalid account',
+          destination_amount_string: '1+XRP'
+        },
+        query: {
 
-  //   });
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(400);
+          expect(json_response.message).to.contain('destination_account');
+          done();
+        }
+      };
+      var next = function(error){};
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now() - 1;
+      $.remote._getServer = function() {
+        return Server;
+      };
+
+      payments.getPathFind($, req, res, next);
+
+    });
+
+    it('should respond with an error if the destination_amount is missing', function(done){
+
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          // destination_amount_string: '1+XRP'
+        },
+        query: {
+
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(400);
+          expect(json_response.message).to.contain('destination_amount');
+          done();
+        }
+      };
+      var next = function(error){};
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now() - 1;
+      $.remote._getServer = function() {
+        return Server;
+      };
+
+      payments.getPathFind($, req, res, next);
+
+    });
+
+    it('should respond with an error if the destination_amount is invalid', function(done){
+
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '1XRP'
+        },
+        query: {
+
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(400);
+          expect(json_response.message).to.contain('destination_amount');
+          done();
+        }
+      };
+      var next = function(error){};
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now() - 1;
+      $.remote._getServer = function() {
+        return Server;
+      };
+
+      payments.getPathFind($, req, res, next);
+
+    });
+
+    it('should respond with an error if the source_currencies list is invalid', function(done){
+
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '1+XRP'
+        },
+        query: {
+          source_currencies: 'USD,XRP,BTCr9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59'
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(400);
+          expect(json_response.message).to.contain('source_currencies');
+          done();
+        }
+      };
+      var next = function(error){
+        expect(error).not.to.exist;
+      };
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now() - 1;
+      $.remote._getServer = function() {
+        return Server;
+      };
+
+      payments.getPathFind($, req, res, next);
+
+    });
+
+    it('should respond with an error if there is no connection to rippled', function(done){
+
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '1+XRP'
+        },
+        query: {
+          source_currencies: 'USD,XRP,BTC r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59'
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(500);
+          expect(json_response.message).to.contain('No connection to rippled');
+          done();
+        }
+      };
+      var next = function(error){
+        expect(error).not.to.exist;
+      };
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now() - (server_lib.CONNECTION_TIMEOUT + 1);
+      Server.connect = function(){};
+      $.remote._servers.push(Server);
+      $.remote._getServer = function() {
+        return Server;
+      };
+
+      payments.getPathFind($, req, res, next);
+
+    });
+
+    it('should convert the parameters into the form expected by ripple-lib', function(done){
+
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '1+XRP'
+        },
+        query: {
+          source_currencies: 'USD,XRP,BTC r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59'
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(false, 'This should not be called');
+        }
+      };
+      var next = function(error){
+        expect(error).not.to.exist;
+      };
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      Server.connect = function(){};
+      $.remote._servers.push(Server);
+      $.remote._getServer = function() {
+        return Server;
+      };
+
+      $.remote.requestRipplePathFind = function(params) {
+        expect(params.src_account).to.equal('r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59');
+        expect(params.dst_account).to.equal('rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz');
+        expect(params.dst_amount).to.equal('1000000');
+        expect(params.src_currencies).to.deep.equal([ 
+          { currency: 'USD' },
+          { currency: 'XRP' },
+          { currency: 'BTC',
+            issuer: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59' } 
+        ]);
+        
+        done();
+
+        return {
+          once: function(){},
+          timeout: function(){},
+          request: function(){}
+        };
+      };
+
+      payments.getPathFind($, req, res, next);
+
+    });
 
   //   it('should add a direct XRP path where applicable (because rippled assumes the direct path is obvious)', function(){
 
@@ -1923,6 +2248,6 @@ describe('api/payments', function(){
 
   //   });
 
-  // });
+  });
 
 });

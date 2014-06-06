@@ -1,11 +1,14 @@
-var _                = require('lodash');
-var async            = require('async');
-var bignum           = require('bignumber.js');
-var ripple           = require('ripple-lib');
-var validator        = require('../lib/schema-validator');
-var transactions     = require('./transactions');
-var serverLib        = require('../lib/server-lib');
-var utils            = require('../lib/utils');
+var _                     = require('lodash');
+var async                 = require('async');
+var bignum                = require('bignumber.js');
+var ripple                = require('ripple-lib');
+var validator             = require('../lib/schema-validator');
+var transactions          = require('./transactions');
+var serverLib             = require('../lib/server-lib');
+var utils                 = require('../lib/utils');
+
+var currency_schema       = require('../schemas/Currency.json');
+var ripple_address_schema = require('../schemas/RippleAddress.json');
 
 var DEFAULT_RESULTS_PER_PAGE = 10;
 
@@ -622,36 +625,103 @@ function getAccountPayments($, req, res, next) {
  *  for a given set of parameters and respond to the
  *  client with an array of fully-formed Payments.
  *
- *  @param...
+ *  @param {Remote} $.remote
+ *  @param {/lib/db-interface} $.dbinterface
+ *  @param {RippleAddress} req.params.source_account
+ *  @param {Array of currencies written as "USD r...,XRP,..."} req.query.source_currencies Note that Express.js middleware replaces "+" signs with spaces. Clients should use "+" signs but the values here will end up as spaces
+ *  @param {RippleAddress} req.params.destination_account
+ *  @param {Amount written as "1+USD+r..."} req.params.destination_amount_string
+ *  @param {Express.js Response} res
+ *  @param {Express.js Next} next
  */
 function getPathFind($, req, res, next) {
 
+  // Parse and validate parameters
   var params = {
     source_account: req.params.account,
-    source_currencies_string: req.param('source_currencies'),
     destination_account: req.params.destination_account,
-    destination_amount_string: req.params.destination_amount_string,
+    destination_amount: {},
+    source_currencies: []
   };
 
-  function validateOptions(async_callback) {
-    if (typeof params.source_currencies_string === 'string' && params.source_currencies_string.length >= 3) {
-      params.source_currencies = params.source_currencies_string.split(',');
-    }
+  if (!params.source_account) {
+    return res.json(400, { success: false, message: 'Missing parameter: source_account. ' +
+      'Must be a valid Ripple address' });
+  }
 
-    if (typeof params.destination_amount_string !== 'string' || params.destination_amount_string.length === 0) {
-      return res.json(400, { success: false, message: 'Invalid Parameter: destination_amount. Must supply a string in the form value+currency+issuer' });
-    }
+  if (!params.destination_account) {
+    return res.json(400, { success: false, message: 'Missing parameter: destination_account. ' +
+      'Must be a valid Ripple address'});
+  }
 
-    params.destination_amount_array = params.destination_amount_string.split('+');
-
-    params.destination_amount = {
-      value: params.destination_amount_array[0],
-      currency: params.destination_amount_array[1],
-      issuer: (params.destination_amount_array.length >= 3 ? params.destination_amount_array[2] : '')
-    };
-
-    async_callback();
+  // Parse destination amount
+  if (!req.params.destination_amount_string) {
+    return res.json(400, { success: false, message: 'Missing parameter: destination_amount. ' +
+      'Must be an amount string in the form value+currency+issuer' });
+  }
+  var destination_amount_array = req.params.destination_amount_string.split('+');
+  params.destination_amount = {
+    value:    (destination_amount_array.length >= 1 ? destination_amount_array[0] : ''),
+    currency: (destination_amount_array.length >= 2 ? destination_amount_array[1] : ''),
+    issuer:   (destination_amount_array.length >= 3 ? destination_amount_array[2] : '')
   };
+
+  if (!validator.isValid(params.source_account, 'RippleAddress')) {
+    return res.json(400, { success: false, message: 'Invalid parameter: source_account. ' +
+      'Must be a valid Ripple address' });
+  }
+
+  if (!validator.isValid(params.destination_account, 'RippleAddress')) {
+    return res.json(400, { success: false, message: 'Invalid parameter: destination_account. ' +
+      'Must be a valid Ripple address'});
+  }
+
+  if (!validator.isValid(params.destination_amount, 'Amount')) {
+    return res.json(400, { success: false, message: 'Invalid parameter: destination_amount. ' +
+      'Must be an amount string in the form value+currency+issuer'});
+  }
+
+  // Parse source currencies
+  // Note that the source_currencies should be in the form
+  // "USD r...,BTC,XRP". The issuer is optional but if provided should be
+  // separated from the currency by a single space.
+  if (req.query.source_currencies) {
+
+    var source_currency_strings = req.query.source_currencies.split(',');
+
+    for (var c = 0; c < source_currency_strings.length; c++) {
+
+      // Remove leading and trailing spaces
+      source_currency_strings[c] = source_currency_strings[c].replace(/(^[ ])|([ ]$)/g, '');
+
+      // If there is a space, there should be a valid issuer after the space
+      if (/ /.test(source_currency_strings[c])) {
+        var currency_issuer_array = source_currency_strings[c].split(' '),
+
+        currency_object = {
+          currency: currency_issuer_array[0],
+          issuer: currency_issuer_array[1]
+        };
+
+        if (validator.isValid(currency_object.currency, 'Currency') && validator.isValid(currency_object.issuer, 'RippleAddress')) {
+          params.source_currencies.push(currency_object);
+        } else {
+          return res.json(400, { success: false, message: 'Invalid parameter: source_currencies. ' +
+            'Must be a list of valid currencies' });          
+        }
+
+      } else {
+
+        if (validator.isValid(source_currency_strings[c], 'Currency')) {
+          params.source_currencies.push({ currency: source_currency_strings[c] });
+        } else {
+          return res.json(400, { success: false, message: 'Invalid parameter: source_currencies. ' +
+            'Must be a list of valid currencies' });          
+        }
+
+      }
+    }
+  }
 
   function ensureConnected(async_callback) {
     serverLib.ensureConnected($.remote, function(err, connected) {
@@ -663,15 +733,24 @@ function getPathFind($, req, res, next) {
     });
   };
 
-  // If the transaction was not in the outgoing_transactions db, get it from rippled
   function prepareOptions(async_callback) {
-    parseParams(params, function(err, pathfind_params) {
-      if (err) {
-        res.json(400, { success: false, message: err.message });
-      } else {
-        async_callback(null, pathfind_params);
-      }
-    });
+    var pathfind_params = {
+      src_account: params.source_account,
+      dst_account: params.destination_account,
+      dst_amount: (params.destination_amount.currency === 'XRP' ?
+        utils.xrpToDrops(params.destination_amount.value) :
+        params.destination_amount)
+    };
+
+    if (typeof pathfind_params.dst_amount === 'object' && !pathfind_params.dst_amount.issuer) {
+      pathfind_params.dst_amount.issuer = pathfind_params.dst_account;
+    }
+
+    if (params.source_currencies.length > 0) {
+      pathfind_params.src_currencies = params.source_currencies;
+    }
+
+    async_callback(null, pathfind_params);
   };
 
   function findPath(pathfind_params, async_callback) {
@@ -693,8 +772,7 @@ function getPathFind($, req, res, next) {
       });
     };
 
-    // TODO: make this a global variable instead of hard-coded values
-    request.timeout(1000 * 20, function() {
+    request.timeout(serverLib.CONNECTION_TIMEOUT, function() {
       request.removeAllListeners();
       reconnectRippled();
       res.json(502, { success: false, message: 'Path request timeout' });
@@ -760,7 +838,6 @@ function getPathFind($, req, res, next) {
   };
 
   var steps = [
-    validateOptions,
     ensureConnected,
     prepareOptions,
     findPath,
@@ -775,79 +852,6 @@ function getPathFind($, req, res, next) {
       res.json(200, { success: true, payments: payments });
     }
   });
-};
-
-/**
- *  Validate and parse the pathfinding parameters.
- *
- *  @param {RippleAddress} params.source_account
- *  @param {RippleAddress} params.destination_account
- *  @param {Amount} params.destination_amount
- *  @param {Array of Currencies} params.source_currencies
- */
-function parseParams(params, callback) {
-  var source_currencies = [ ];
-
-  if (!validator.isValid(params.source_account, 'RippleAddress')) {
-    return callback(new TypeError('Invalid parameter: source_account. Must be a valid Ripple address'));
-  }
-
-  if (!validator.isValid(params.destination_account, 'RippleAddress')) {
-    return callback(new TypeError('Invalid parameter: destination_account. Must be a valid Ripple address'));
-  }
-
-  if (!validator.isValid(params.destination_amount, 'Amount')) {
-    return callback(new TypeError('Invalid parameter: destination_amount. Must be an object of the form { value: \'1\', currency: \'XRP\', issuer: \' }'));
-  }
-
-  // Parse source currencies
-  if (typeof params.source_currencies === 'object') {
-    params.source_currencies.forEach(function(currency_string) {
-      // Note that express middleware replaces '+' with ' ' in the query string
-
-      if (/ /.test(currency_string)) {
-        var currency_issuer_array = currency_string.split(' '),
-
-        currency_object = {
-          currency: currency_issuer_array[0],
-          issuer: currency_issuer_array[1]
-        };
-
-        var validCurrency = validator.isValid(currency_object.currency, 'Currency')
-                        || validator.isValid(currency_object.issuer, 'RippleAddress')
-
-        if (!validCurrency) {
-          return callback(new TypeError('Invalid parameter: source_currencies. Must be a list of valid currencies'));
-        } else {
-          source_currencies.push(currency_object);
-        }
-      } else {
-        if (!validator.isValid(currency_string, 'Currency')) {
-          return callback(new TypeError('Invalid parameter: source_currencies. Must be a list of valid currencies'));
-        } else {
-          source_currencies.push({ currency: currency_string });
-        }
-      }
-    });
-  }
-
-  var pathfindParams = {
-    src_account: params.source_account,
-    dst_account: params.destination_account,
-    dst_amount: (params.destination_amount.currency === 'XRP' ?
-      utils.xrpToDrops(params.destination_amount.value) :
-      params.destination_amount)
-  };
-
-  if (typeof pathfindParams.dst_amount === 'object' && !pathfindParams.dst_amount.issuer) {
-    pathfindParams.dst_amount.issuer = pathfindParams.dst_account;
-  }
-
-  if (source_currencies.length > 0) {
-    pathfindParams.src_currencies = source_currencies;
-  }
-
-  callback(null, pathfindParams);
 };
 
 /**
