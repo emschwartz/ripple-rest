@@ -812,12 +812,12 @@ function getPathFind($, req, res, next) {
 
   function formatPath(pathfind_results, async_callback) {
     if (pathfind_results.alternatives && pathfind_results.alternatives.length > 0) {
-      var payment_options = paymentformatter.parsePaymentsFromPathfind(pathfind_results);
+      var payment_options = parsePaymentsFromPathfind(pathfind_results);
       return async_callback(null, payment_options);
     }
 
     if (pathfind_results.destination_currencies.indexOf(params.destination_amount.currency) === -1) {
-      res.json(404, { success: false, message: 'No paths found.' +
+      res.json(404, { success: false, message: 'No paths found. ' +
         'The destination_account does not accept ' +
         params.destination_amount.currency +
         ', they only accept: ' +

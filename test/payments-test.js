@@ -2218,7 +2218,7 @@ describe('api/payments', function(){
           { currency: 'BTC',
             issuer: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59' } 
         ]);
-        
+
         done();
 
         return {
@@ -2232,17 +2232,190 @@ describe('api/payments', function(){
 
     });
 
-  //   it('should add a direct XRP path where applicable (because rippled assumes the direct path is obvious)', function(){
+    it('should add a direct XRP path where applicable (because rippled assumes the direct path is obvious)', function(done){
 
-  //   });
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '1+XRP'
+        },
+        query: {
+          source_currencies: 'XRP'
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(200);
+          expect(json_response.payments).to.have.length(1);
+          expect(json_response.payments[0].source_amount.currency).to.equal('XRP');
+          expect(json_response.payments[0].destination_amount.currency).to.equal('XRP');
+          done();
+        }
+      };
+      var next = function(error){
+        expect(error).not.to.exist;
+      };
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      Server.connect = function(){};
+      $.remote._servers.push(Server);
+      $.remote._getServer = function() {
+        return Server;
+      };
 
-  //   it('should respond with an error if the destination_account does not accept the specified currency', function(){
+      $.remote.requestRipplePathFind = function(params) {
+        return {
+          once: function(event_name, event_handler){
+            if (event_name === 'success') {
+              event_handler({
+                alternatives: [],
+                destination_currencies: [ 'XRP' ]
+              });
+            }
+          },
+          timeout: function(){},
+          request: function(){}
+        };
+      };
+      $.remote.requestAccountInfo = function(account, callback) {
+        callback(null, {
+          account_data: {
+            Balance: '100000000000'
+          }
+        });
+      };
 
-  //   });
+      payments.getPathFind($, req, res, next);
 
-  //   it('shoudld respond with an error if there is no path found because of insufficient liquidity', function(){
+    });
 
-  //   });
+    it('should respond with an error if the destination_account does not accept the specified currency', function(done){
+
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '1+XRP'
+        },
+        query: {
+          source_currencies: 'XRP'
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(404);
+          expect(json_response.message).to.equal('No paths found. The destination_account does not accept XRP, they only accept: USD');
+          done();
+        }
+      };
+      var next = function(error){
+        expect(error).not.to.exist;
+      };
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      Server.connect = function(){};
+      $.remote._servers.push(Server);
+      $.remote._getServer = function() {
+        return Server;
+      };
+
+      $.remote.requestRipplePathFind = function(params) {
+        return {
+          once: function(event_name, event_handler){
+            if (event_name === 'success') {
+              event_handler({
+                alternatives: [],
+                destination_currencies: [ 'USD' ]
+              });
+            }
+          },
+          timeout: function(){},
+          request: function(){}
+        };
+      };
+
+      payments.getPathFind($, req, res, next);
+
+    });
+
+    it('shoudld respond with an error if there is no path found because of insufficient liquidity', function(done){
+
+      var $ = {
+        remote: new ripple.Remote({
+          servers: [ ]
+        }),
+        dbinterface: {}
+      };
+      var req = {
+        params: {
+          account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+          destination_account: 'rKXCummUHnenhYudNb9UoJ4mGBR75vFcgz',
+          destination_amount_string: '1+XRP'
+        },
+        query: {
+          source_currencies: 'XRP'
+        }
+      };
+      var res = {
+        json: function(status_code, json_response) {
+          expect(status_code).to.equal(404);
+          expect(json_response.message).to.contain('No paths found');
+          expect(json_response.message).to.contain('insufficient liquidity');
+          done();
+        }
+      };
+      var next = function(error){
+        expect(error).not.to.exist;
+      };
+       
+      var Server = new process.EventEmitter;
+      Server._lastLedgerClose = Date.now();
+      Server.connect = function(){};
+      $.remote._servers.push(Server);
+      $.remote._getServer = function() {
+        return Server;
+      };
+
+      $.remote.requestRipplePathFind = function(params) {
+        return {
+          once: function(event_name, event_handler){
+            if (event_name === 'success') {
+              event_handler({
+                alternatives: [],
+                destination_currencies: [ 'XRP', 'BTC' ]
+              });
+            }
+          },
+          timeout: function(){},
+          request: function(){}
+        };
+      };
+      $.remote.requestAccountInfo = function(account, callback) {
+        callback(null, {
+          account_data: {
+            Balance: '0'
+          }
+        });
+      };
+
+      payments.getPathFind($, req, res, next);
+
+    });
 
   //   it('should produce an array of properly formatted payment objects', function(){
 
